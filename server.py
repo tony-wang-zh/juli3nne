@@ -92,6 +92,6 @@ def upload():
 if __name__ == '__main__':
     app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
     app.config['STATIC_STL_FOLDER'] = STATIC_STL_FOLDER
-    app.run(host='0.0.0.0')
+    app.run(host='0.0.0.0', port=8080)
 
 
