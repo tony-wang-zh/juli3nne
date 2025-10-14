@@ -1,0 +1,15 @@
+# stl / gcode / etc. files that's different per print are not tracked 
+./STL_files/*
+./gcode_clean/*
+./configs/*
+./gcode_unclean/*
+./repo/*
+./static/*
+./toolchange/*
+
+# these files are generated and do not need to tracked either: 
+./combined.gcode
+GCode_clean_temp.R
+concat.sh
+slic3r_script.sh
+

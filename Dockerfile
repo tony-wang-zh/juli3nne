@@ -1,0 +1,76 @@
+# ---- Base system ----
+FROM ubuntu:18.04
+ENV DEBIAN_FRONTEND=noninteractive
+
+# ---- enable the universe repository ----
+RUN apt-get update && apt-get install -y software-properties-common && add-apt-repository universe
+
+# ---- System dependencies for Slic3r + Python ----
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    wget \
+    curl \
+    git \
+    python3 python3-pip \
+    libgtk2.0-dev \
+    libwxgtk3.0-dev \
+    libwx-perl \
+    libmodule-build-perl \
+    cpanminus \
+    libextutils-cppguess-perl \
+    libboost-all-dev \
+    libxmu-dev \
+    liblocal-lib-perl \
+    wx-common \
+    libopengl-perl \
+    libwx-glcanvas-perl \
+    libtbb-dev \
+    freeglut3-dev \
+    libwxgtk-media3.0-dev \
+    libboost-thread-dev \
+    libboost-system-dev \
+    libboost-filesystem-dev \
+    libcurl4-openssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# ---- Perlbrew setup ----
+RUN wget -O - https://install.perlbrew.pl | bash && \
+    /root/perl5/perlbrew/bin/perlbrew install perl-5.26.1 -Dusethreads -Duselargefiles -Dcccdlflags=-fPIC -Doptimize=-O2 --as threaded-perl-5.26.1 && \
+    /root/perl5/perlbrew/bin/perlbrew switch threaded-perl-5.26.1 && \
+    /root/perl5/perlbrew/bin/perlbrew install-cpanm
+
+# ---- Environment for Perlbrew ----
+ENV PERLBREW_ROOT=/root/perl5/perlbrew
+ENV PATH="$PERLBREW_ROOT/perls/threaded-perl-5.26.1/bin:$PERLBREW_ROOT/bin:${PATH}"
+
+# ---- Clone and build Slic3r ----
+WORKDIR /opt
+RUN git clone https://github.com/slic3r/Slic3r.git && \
+    cd Slic3r && \
+    git checkout -b origin/stable \
+    git submodule update --init --recursive && \
+    # cpanm --installdeps . && \
+    perl Build.PL && \
+    ./Build install
+
+ENV LDLOADLIBS=-lstdc++
+RUN perl Build.PL
+
+# ---- Add Slic3r to PATH ----
+# ENV PATH="/opt/Slic3r:$PATH"
+
+# ---- set up Python server ----
+WORKDIR /app
+RUN python3 -m pip install --upgrade pip==21.3.1
+COPY requirements_old.txt .
+RUN pip3 install --no-cache-dir -r requirements_old.txt
+
+# ---- getting R ----
+RUN apt-get install -y r-base
+
+COPY . /app
+
+# ---- Expose and run ----
+EXPOSE 8080
+CMD ["python3", "server.py"]
