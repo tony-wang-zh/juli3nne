@@ -34,7 +34,8 @@ class GcodeGenerator:
     def __init__(self, configs, base_offset):
         self.CONFIGS = configs
         self.EXT_MULTIPLIERS = self.generate_extrusion_multiplier_dict()
-        self.SLIC3R_PATH = '../Slic3r/slic3r.pl'
+        # self.SLIC3R_PATH = '../Slic3r/slic3r.pl'
+        self.SLIC3R_PATH = '../opt/Slic3r/slic3r.pl'
         self.BASE_OFFSET = float(base_offset)
         self.INPUT_DIR = './input'
         self.TEMP_DIR = './temp'
