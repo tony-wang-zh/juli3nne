@@ -5,7 +5,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # ---- enable the universe repository ----
 RUN apt-get update && apt-get install -y software-properties-common && add-apt-repository universe
 
-# ---- System dependencies for Slic3r + Python ----
+# ---- System dependencies for Slic3r and Python ----
 RUN apt-get update && apt-get install -y \
     build-essential \
     cmake \
@@ -34,43 +34,37 @@ RUN apt-get update && apt-get install -y \
     libcurl4-openssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# ---- set up Python ----
+WORKDIR /app
+RUN python3 -m pip install --upgrade pip==21.3.1 
+COPY requirements_old.txt .
+RUN pip3 install --no-cache-dir -r requirements_old.txt
+COPY . /app
+
+# ---- getting R ----
+RUN apt-get update && apt-get install -y r-base
+
 # ---- Perlbrew setup ----
-RUN wget -O - https://install.perlbrew.pl | bash && \
-    /root/perl5/perlbrew/bin/perlbrew install perl-5.26.1 -Dusethreads -Duselargefiles -Dcccdlflags=-fPIC -Doptimize=-O2 --as threaded-perl-5.26.1 && \
-    /root/perl5/perlbrew/bin/perlbrew switch threaded-perl-5.26.1 && \
-    /root/perl5/perlbrew/bin/perlbrew install-cpanm
+# this step is particularly slow 
+RUN wget -O - https://install.perlbrew.pl | bash 
+RUN /root/perl5/perlbrew/bin/perlbrew install perl-5.26.1 -Dusethreads -Duselargefiles -Dcccdlflags=-fPIC -Doptimize=-O2 --as threaded-perl-5.26.1  
+RUN /root/perl5/perlbrew/bin/perlbrew switch threaded-perl-5.26.1 
+RUN /root/perl5/perlbrew/bin/perlbrew install-cpanm
 
 # ---- Environment for Perlbrew ----
 ENV PERLBREW_ROOT=/root/perl5/perlbrew
 ENV PATH="$PERLBREW_ROOT/perls/threaded-perl-5.26.1/bin:$PERLBREW_ROOT/bin:${PATH}"
 
 # ---- Clone and build Slic3r ----
-WORKDIR /opt
-RUN git clone https://github.com/slic3r/Slic3r.git && \
-    cd Slic3r && \
-    git checkout -b origin/stable \
-    git submodule update --init --recursive && \
-    # cpanm --installdeps . && \
-    perl Build.PL && \
-    ./Build install
+# RUN git clone https://github.com/slic3r/Slic3r.git 
+WORKDIR /app/Slic3r 
+RUN git checkout -b origin/stable || echo "likely already on stable branch, skipping"
+RUN git submodule update --init --recursive 
 
 ENV LDLOADLIBS=-lstdc++
-RUN perl Build.PL
+RUN perl Build.PL 
 
-# ---- Add Slic3r to PATH ----
-# ENV PATH="/opt/Slic3r:$PATH"
-
-# ---- set up Python server ----
-WORKDIR /app
-RUN python3 -m pip install --upgrade pip==21.3.1
-COPY requirements_old.txt .
-RUN pip3 install --no-cache-dir -r requirements_old.txt
-
-# ---- getting R ----
-RUN apt-get install -y r-base
-
-COPY . /app
-
-# ---- Expose and run ----
+# # ---- Expose and run ----
 EXPOSE 8080
-CMD ["python3", "server.py"]
+WORKDIR /app
+CMD ["python3", "server.py"] 
