@@ -5,22 +5,26 @@ from oauth2client import file, tools, client
 
 def access_google_drive():
 
-    cred_file = # decide where to store these
-    secret_file = # 
-    SCOPE = 'https://www.googleapis.com/auth/drive'
+    # Tony
+    # 10/25: this is not used so can safely comment out for now 
+    return None
 
-    store = file.Storage(cred_file)
-    cred = store.get()
+    # cred_file = # decide where to store these
+    # secret_file = # 
+    # SCOPE = 'https://www.googleapis.com/auth/drive'
 
-    if not cred or cred.invalid:
-        flow = clients.flow_from_clientsecrets(secret_file, SCOPE)
-        cred = tools.run_flow(flow, store)
+    # store = file.Storage(cred_file)
+    # cred = store.get()
 
-    http = credentials.authorize(Http())
-    drive = discovery.build('drive', 'v3', http=http)
-    sheets = discovery.build('sheets', 'v4', credentials=credentials)
+    # if not cred or cred.invalid:
+    #     flow = clients.flow_from_clientsecrets(secret_file, SCOPE)
+    #     cred = tools.run_flow(flow, store)
 
-    return drive, sheets
+    # http = credentials.authorize(Http())
+    # drive = discovery.build('drive', 'v3', http=http)
+    # sheets = discovery.build('sheets', 'v4', credentials=credentials)
+
+    # return drive, sheets
 
 
 
