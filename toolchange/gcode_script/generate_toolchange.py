@@ -2,6 +2,7 @@ from array import *
 import random
 import sys
 import csv
+import os
 #from get_coords import access_google_drive, get_spreadsheet_id, download_sheet
 
 SPEEDPICKUP = []
@@ -30,6 +31,7 @@ with open('toolchange/gcode_script/ToolPostCoords.csv', newline='') as csvfile:
 
 #Default values
 folderName = "toolchange/generatedTCgcode"
+os.makedirs(folderName, exist_ok=True)
 
 print("Generating from ToolPostCoords.csv")
 
