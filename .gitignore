@@ -11,4 +11,5 @@ static/
 GCode_clean_temp.R
 concat.sh
 slic3r_script.sh
+toolchange/generatedTCgcode
 
