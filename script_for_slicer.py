@@ -84,7 +84,7 @@ class SlicerShell:
         slic3r_script = open("slic3r_script.sh", "w+")
         for key in file_details.keys():
             slic3r_script.write(
-                "../opt/Slic3r/slic3r.pl --gcode-comments --infill-speed 10 --fill-density 80 --z-offset ")
+                "./Slic3r/slic3r.pl --gcode-comments --infill-speed 10 --fill-density 80 --z-offset ")
             slic3r_script.write(file_details[key][3])  # z-offset
             # slic3r_script.write("../../Slic3r/slic3r.pl --gcode-comments --infill-speed 10 --fill-density 80 ")
             slic3r_script.write(" --skirt-height 0 --skirts 0 --print-center ")
