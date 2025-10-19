@@ -1,3 +1,4 @@
+# this is for ubuntu 18.04
 blinker==1.5
 click==8.0.4
 Flask==2.0.3
