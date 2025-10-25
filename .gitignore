@@ -13,3 +13,5 @@ concat.sh
 slic3r_script.sh
 toolchange/generatedTCgcode
 
+# this is local mac os file 
+.DS_Store
