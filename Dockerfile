@@ -47,7 +47,7 @@ RUN apt-get update && apt-get install -y r-base
 # ---- Perlbrew setup ----
 # this step is particularly slow 
 RUN wget -O - https://install.perlbrew.pl | bash 
-RUN /root/perl5/perlbrew/bin/perlbrew install perl-5.26.1 -Dusethreads -Duselargefiles -Dcccdlflags=-fPIC -Doptimize=-O2 --as threaded-perl-5.26.1  
+RUN /root/perl5/perlbrew/bin/perlbrew install -n -j 4 perl-5.26.1 -Dusethreads -Duselargefiles -Dcccdlflags=-fPIC -Doptimize=-O2 --as threaded-perl-5.26.1  
 RUN /root/perl5/perlbrew/bin/perlbrew switch threaded-perl-5.26.1 
 RUN /root/perl5/perlbrew/bin/perlbrew install-cpanm
 
