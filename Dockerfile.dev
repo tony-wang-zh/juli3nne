@@ -68,4 +68,4 @@ RUN perl Build.PL
 # # ---- Expose and run ----
 EXPOSE 8080
 WORKDIR /app
-CMD ["python3", "server.py"] 
+# CMD ["python3", "server.py"] 
