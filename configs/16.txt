@@ -1,8 +1,0 @@
-./gcode_unclean/16.gcode
-./gcode_clean/16.gcode
-18
-1
-9
-16
-16
-0

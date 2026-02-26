@@ -5,6 +5,9 @@ configs/
 gcode_unclean/
 repo/
 static/
+temp/
+input/
+output/
 
 # these files are generated and do not need to tracked either: 
 ./combined.gcode
@@ -15,3 +18,6 @@ toolchange/generatedTCgcode
 
 # this is local mac os file 
 .DS_Store
+.vscode/
+Slic3r/
+__pycache__/
