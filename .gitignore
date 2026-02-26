@@ -5,6 +5,9 @@ configs/
 gcode_unclean/
 repo/
 static/
+temp/
+input/
+output/
 
 # these files are generated and do not need to tracked either: 
 ./combined.gcode
