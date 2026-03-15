@@ -62,9 +62,8 @@ class GcodeProcessor:
         current_tool_gcode = self.get_tool_gcode(current_tool_index, False)
         next_tool_gcode = self.get_tool_gcode(next_tool_index, True)
 
-        new_str = ""
+        new_str = "" 
         x_move = 0
-        curr_layer = -1
         cmd_store = ""
 
         total_dist_moved = 0.0
@@ -75,7 +74,7 @@ class GcodeProcessor:
         end_e = 0
 
         f = open(file, "r")
-        for line in f:
+        for line in f:           
             if len(line) == 0:
                 continue
             start = line[0].upper()
@@ -83,42 +82,45 @@ class GcodeProcessor:
                 continue
             if 'lift nozzle' in line or 'home X axis' in line:
                 continue
-            if 'G28' in line or 'G21' in line or 'G90' in line:
+            if 'G28' in line or 'G21' in line or 'G90' in line: 
+                # set unit (inch/cm) and set absolute positioning
+                # not needed for our machines
                 continue
 
-            if 'move to next layer' in line:
-                curr_layer = curr_layer + 1
-
-            if '; retract extruder' in line:
+            if '; retract' in line:
                 moved = float(line.split(" ")[1][1:])
                 total_dist_moved = total_dist_moved + moved
                 active_search = 1
 
-            if x_move == 0 and 'G1 Z' in line:
+            # moving to next layer
+            # prusa adds a lift line which we skip
+            if x_move == 0 and 'G1 Z' in line and 'layer' in line:
                 cmd_store = line
                 continue
 
-            if x_move == 0 and 'G1 X' in line:
+            if x_move == 0 and 'G1 X' in line: # regular move lines 
                 new_str = new_str + line + cmd_store
                 x_move = 1
                 continue
 
             new_str += line
 
+            # reset extrusion distance lines 
             if 'G92' in line and do_extrude == 0:
                 new_str += 'G4 P4000; sleep extra 4s\n'
                 do_extrude = 1
 
-            if 'unretract extruder 0' in line and add_extruder_init:
+            if '; unretract' in line and add_extruder_init:
                 to_add = 'M83;\nG01 E' + str(initial_extruder_depth-5) + ';\nG01 E' + str(initial_extruder_depth)
                 to_add += ' F50;\nG92 E0;\n'
                 new_str += to_add
                 add_extruder_init = False
 
+            
             if ';' in line:
-                temp = line.split(";")[0]
-                if 'E' in temp and 'G92' not in temp:
-                    temp = temp.split('E')[1]
+                command = line.split(";")[0] # skipping comment 
+                if 'E' in command and 'G92' not in command: # regular extrusion line
+                    temp = command.split('E')[1] 
                     end_e = float(temp.split(" ")[0])
                 if active_search == 1 and 'G1' in line and 'retract' not in line:
                     active_search = 0
@@ -130,6 +132,7 @@ class GcodeProcessor:
 
         end_string = ';;;;;;;;;;;\n; Tool Change Code\n;;;;;;;;;\nG92 E0;\n'
 
+        # retract extrusion 
         end_string += 'G1 E-' + str(round((total_dist_moved + initial_extruder_depth), 3))
         end_string += ' F2000; retract to 0\nG92 E0;\n'
 
@@ -142,6 +145,7 @@ class GcodeProcessor:
         else:
             end_string = end_string + 'G1 Z75 F1000;\n'+'G28 E0 F1000;;\n'
 
+        # TODO: ???? what. ??? 
         if initial_extruder_depth+total_dist_moved > 85: #change this number to the maximum extrustion limit
             raise ValueError("Tool "+ str(current_tool_index)+" exceeded maximum extrustion distance")
 
