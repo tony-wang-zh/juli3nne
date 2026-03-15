@@ -1,8 +1,10 @@
 import os
 import re
-from generate_gcode import GcodeGenerator
+# from generate_gcode import GcodeGenerator
+from generate_gcode_prusa import GcodeGenerator
 from fix_depths import GcodeDepthFixer
-from process_gcode import GcodeProcessor
+# from process_gcode import GcodeProcessor
+from process_gcode_prusa import GcodeProcessor
 
 
 def layer_config_regex(search):

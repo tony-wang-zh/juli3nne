@@ -24,7 +24,7 @@ class GcodeProcessor:
         self.TEMP_DIR = "./temp"
         self.OUTPUT_DIR = "./output"
         self.TOOL_DIR = "./toolchange/generatedTCgcode"
-        self.END_STRING = "G01 Z60.4 F5000\nG01 X0.0 Y200.00 Z80.00 F2000.00"
+        self.END_STRING = "G01 Z60.4 F5000\nG01 X0.0 Y200.00 Z80.00 F2000.00" # return to default?
 
     def write_output_file(self, gcodes):
         f = open(self.OUTPUT_DIR + '/combined.gcode', "w+")
@@ -57,10 +57,10 @@ class GcodeProcessor:
     def clean_gcode_file(self, config, file, is_last_file):
         initial_extruder_depth = float(config[3])
 
+        print(config)
+
         current_tool_index = config[1]
         next_tool_index = config[4]
-        current_tool_gcode = self.get_tool_gcode(current_tool_index, False)
-        next_tool_gcode = self.get_tool_gcode(next_tool_index, True)
 
         new_str = "" 
         x_move = 0
@@ -72,6 +72,9 @@ class GcodeProcessor:
         start_e = 0
         add_extruder_init = True
         end_e = 0
+
+        pickup_tool_gcode = self.get_tool_gcode(current_tool_index, True)
+        new_str += pickup_tool_gcode
 
         f = open(file, "r")
         for line in f:           
@@ -86,6 +89,9 @@ class GcodeProcessor:
                 # set unit (inch/cm) and set absolute positioning
                 # not needed for our machines
                 continue
+            if '; lift' in line and 'lift nozzle' not in line:
+                continue
+
 
             if '; retract' in line:
                 moved = float(line.split(" ")[1][1:])
@@ -122,13 +128,16 @@ class GcodeProcessor:
                 if 'E' in command and 'G92' not in command: # regular extrusion line
                     temp = command.split('E')[1] 
                     end_e = float(temp.split(" ")[0])
+                # the first regular extrusion line after retract
                 if active_search == 1 and 'G1' in line and 'retract' not in line:
                     active_search = 0
                     start_e = end_e
 
-
+        # total_dist_moved is adding up all the E<> values on retract lines
+        # and the distance between last and first E<> in regular extrusion lines
         if active_search == 0:
             total_dist_moved = total_dist_moved + end_e - start_e
+
 
         end_string = ';;;;;;;;;;;\n; Tool Change Code\n;;;;;;;;;\nG92 E0;\n'
 
@@ -136,18 +145,17 @@ class GcodeProcessor:
         end_string += 'G1 E-' + str(round((total_dist_moved + initial_extruder_depth), 3))
         end_string += ' F2000; retract to 0\nG92 E0;\n'
 
-        # summer 2022, tool change conditional (no tool change when using same tool)
+        drop_tool_gcode = self.get_tool_gcode(current_tool_index, False)
+        end_string += drop_tool_gcode
+
         if is_last_file:
             end_string += self.END_STRING
-        elif current_tool_index != next_tool_index:
-            end_string = end_string + current_tool_gcode + '\n'
-            end_string = end_string + next_tool_gcode + '\n'
         else:
             end_string = end_string + 'G1 Z75 F1000;\n'+'G28 E0 F1000;;\n'
 
-        # TODO: ???? what. ??? 
-        if initial_extruder_depth+total_dist_moved > 85: #change this number to the maximum extrustion limit
-            raise ValueError("Tool "+ str(current_tool_index)+" exceeded maximum extrustion distance")
+        # TODO: ???? can we skip this check or update the number ??? 
+        # if initial_extruder_depth+total_dist_moved > 85: #change this number to the maximum extrustion limit
+        #     raise ValueError("Tool "+ str(current_tool_index)+" exceeded maximum extrustion distance")
 
         return new_str + end_string
 
@@ -155,10 +163,8 @@ class GcodeProcessor:
         gcodes = []
         for i in range(len(self.CONFIGS)):
             config = self.CONFIGS[i]
-            last = False
-            if i == len(self.CONFIGS) - 1:
-                last = True
-            file = self.get_gcode_file(config)
-            processed_gcode = self.clean_gcode_file(config, file, last)
+            last = i == len(self.CONFIGS) - 1
+            config_file = self.get_gcode_file(config)
+            processed_gcode = self.clean_gcode_file(config, config_file, last)
             gcodes.append(processed_gcode)
         self.write_output_file(gcodes)

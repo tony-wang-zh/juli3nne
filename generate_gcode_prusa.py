@@ -41,7 +41,7 @@ EXTRUSION_MULTIPLIER = "extrusion_multiplier"  # also used as key in ini file
 STL_PATH = "stl_path"
 
 PRUSA_CMD = "prusa-slicer"
-INI_FILE_TEMPLATE = "./prusa_config_file/default_config.ini"
+INI_FILE_TEMPLATE = "prusa_config_file/modified_from_slicer.ini"
 TEMP_INI_FILE_NAME = "temp_config.ini"
 
 class GcodeGenerator:
@@ -179,6 +179,7 @@ class GcodeGenerator:
         temp_ini_file_path.unlink(missing_ok=True)
     
     def generate_gcode(self):
+        print("generating gcode using prusa slicer")
         stl_files = [f for f in listdir(self.INPUT_DIR) if isfile(join(self.INPUT_DIR, f)) and f[-4:].upper() == ".STL"]
 
         def numeric_key(x):
