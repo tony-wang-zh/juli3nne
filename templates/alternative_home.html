@@ -1,0 +1,133 @@
+{% extends "layout.html" %}
+{% block content %}
+<form method="POST" enctype="multipart/form-data" action="/upload" id="upload-form">
+    <div class="input-group mb-3">
+        <div class="custom-file">
+            <input
+                type="file"
+                class="custom-file-input"
+                id="file-input"
+                name="file[]"
+                accept=".stl,.STL"
+                multiple
+            >
+            <label class="custom-file-label" for="file-input">Select Stl files</label>
+        </div>
+    </div>
+
+    <div class="border rounded p-3 mb-3 white-input-box">
+        <div class="row align-items-center">
+            <div class="col-md-3 mb-2 mb-md-0">
+                <label for="z-offset"><strong>Z offset</strong></label>
+            </div>
+            <div class="col-md-3 mb-2 mb-md-0">
+                <input
+                type="number"
+                step="any"
+                class="form-control"
+                id="z-offset"
+                name="z_offset"
+                placeholder="z offset"
+            >
+            </div>
+        </div>
+    </div>
+
+
+    <div id="file-rows"></div>
+
+    <div class="mt-4">
+        <button class="btn btn-primary" id="upload" type="submit" disabled>Upload</button>
+    </div>
+
+    <!-- instructions -->
+     <div class="instructions">
+        <span class="inst-main">First, use Browse button to select ALL stl files of the print
+        </span>
+            <span class="inst-main"> Then input &ltZ-offset&gt. This should be the Z value on the machine, when the extruder tip is almost touching the print bed.
+            <span class="inst-main"> Then for each file, input &ltTool Index&gt, &ltExtrusion Multiplier&gt, and &ltInitial Extrusion Offset&gt</span>
+            <div class="spacer-5"></div>
+            
+        </span>
+            <div class="spacer-20"></div>
+            <button class="btn btn-primary" id="sample-button" type="button">Download Sample Files</button>
+        </div>
+
+</form>
+
+<style>
+.white-input-box {
+    background-color: white;
+}
+</style>
+
+<script>
+    const fileInput = document.getElementById('file-input');
+    const configSection = document.getElementById('config-section');
+    const fileRows = document.getElementById('file-rows');
+    const fileLabel = document.querySelector('label[for="file-input"]');
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function buildRow(file, index) {
+        return `
+            <div class="border rounded p-3 mb-3 white-input-box">
+                <div class="row align-items-center">
+                    <div class="col-md-3 mb-2 mb-md-0">
+                        <strong>${escapeHtml(file.name)}</strong>
+                        <input type="hidden" name="file_name[]" value="${escapeHtml(file.name)}">
+                    </div>
+                    <div class="col-md-3 mb-2 mb-md-0">
+                        <input
+                            type="number"
+                            class="form-control"
+                            name="tool_index[]"
+                            placeholder="Tool Index"
+                        >
+                    </div>
+                    <div class="col-md-3 mb-2 mb-md-0">
+                        <input
+                            type="number"
+                            step="any"
+                            class="form-control"
+                            name="extrusion_multiplier[]"
+                            placeholder="Extrusion Multiplier"
+                        >
+                    </div>
+                    <div class="col-md-3">
+                        <input
+                            type="number"
+                            class="form-control"
+                            name="initial_extrusion_offset[]"
+                            placeholder="Initial Extrusion Offset"
+                        >
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    fileInput.addEventListener('change', function () {
+        const files = Array.from(this.files || []);
+
+        if (files.length === 0) {
+            fileRows.innerHTML = '';
+            configSection.style.display = 'none';
+            fileLabel.textContent = 'Select Stl files';
+            $("#upload").attr('disabled', false);
+            return;
+        }
+
+        fileLabel.textContent = files.length === 1
+            ? files[0].name
+            : `${files.length} STL files selected`;
+
+        fileRows.innerHTML = files.map(buildRow).join('');
+        configSection.style.display = 'block';
+    });
+</script>
+{% endblock %}

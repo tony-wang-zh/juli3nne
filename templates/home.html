@@ -50,7 +50,7 @@
         $('#file-input').on('change',function(){
             let filename = $(this).val();
             if(filename !== '') {
-                $("#upload").attr('disabled', false);
+                $("#upload").attr('disabled', false); // this enables the upload button
             }
             $(this).next('.custom-file-label').html('Multiple files selected');
         })
