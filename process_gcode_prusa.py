@@ -11,6 +11,8 @@ class GcodeProcessor:
     4. Initial Extruder Axis Depth
     * Tool indices start from 0
     """
+    U_AXIS_LIMIT = 95
+
     def __init__(self, configs):
         new_configs = []
         for i in range(len(configs)):
@@ -68,15 +70,20 @@ class GcodeProcessor:
 
         total_dist_moved = 0.0
         do_extrude = 0
-        active_search = 0
-        start_e = 0
         add_extruder_init = True
-        end_e = 0
 
         pickup_tool_gcode = self.get_tool_gcode(current_tool_index, True)
         new_str += pickup_tool_gcode
 
         f = open(file, "r")
+
+        # logic for calculating total extrusion
+        # layer always starts at 2 by config 
+        # because at end of previous layer 
+        # e is moved backed by 2 and that is set as new 0
+        LAYER_START_E_VALUE = 2 
+        current_layer_last_e_value = LAYER_START_E_VALUE
+
         for line in f:           
             if len(line) == 0:
                 continue
@@ -91,13 +98,7 @@ class GcodeProcessor:
                 continue
             if '; lift' in line and 'lift nozzle' not in line:
                 continue
-
-
-            if '; retract' in line:
-                moved = float(line.split(" ")[1][1:])
-                total_dist_moved = total_dist_moved + moved
-                active_search = 1
-
+          
             # moving to next layer
             # prusa adds a lift line which we skip
             if x_move == 0 and 'G1 Z' in line and 'layer' in line:
@@ -127,16 +128,18 @@ class GcodeProcessor:
                 command = line.split(";")[0] # skipping comment 
                 if 'E' in command and 'G92' not in command: # regular extrusion line
                     temp = command.split('E')[1] 
-                    end_e = float(temp.split(" ")[0])
-                # the first regular extrusion line after retract
-                if active_search == 1 and 'G1' in line and 'retract' not in line:
-                    active_search = 0
-                    start_e = end_e
-
-        # total_dist_moved is adding up all the E<> values on retract lines
-        # and the distance between last and first E<> in regular extrusion lines
-        if active_search == 0:
-            total_dist_moved = total_dist_moved + end_e - start_e
+                    current_layer_last_e_value = float(temp.split(" ")[0])
+            
+            # calculate total travel of a layer 
+            # and total travel of the pring 
+            # end of layer, extrusion reset 
+            if '; reset extrusion distance' in line:
+                total_extrusion_in_layer = current_layer_last_e_value - LAYER_START_E_VALUE
+                total_dist_moved += total_extrusion_in_layer
+                current_layer_last_e_value = LAYER_START_E_VALUE
+                
+                if initial_extruder_depth+total_dist_moved > self.U_AXIS_LIMIT:
+                    raise ValueError("Tool "+ str(current_tool_index)+ " exceeded maximum extrustion distance")
 
 
         end_string = ';;;;;;;;;;;\n; Tool Change Code\n;;;;;;;;;\nG92 E0;\n'
@@ -152,10 +155,6 @@ class GcodeProcessor:
             end_string += self.END_STRING
         else:
             end_string = end_string + 'G1 Z75 F1000;\n'+'G28 E0 F1000;;\n'
-
-        # TODO: ???? can we skip this check or update the number ??? 
-        # if initial_extruder_depth+total_dist_moved > 85: #change this number to the maximum extrustion limit
-        #     raise ValueError("Tool "+ str(current_tool_index)+" exceeded maximum extrustion distance")
 
         return new_str + end_string
 
