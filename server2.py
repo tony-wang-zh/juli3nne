@@ -17,28 +17,13 @@ OUTPUT_DIR = './output'
 
 @app.route('/')
 def home():
-    return render_template('alternative_home.html')
+    return render_template('home.html')
 
 
 @app.route('/upload', methods=['POST'])
 def upload():
     flush_dir(INPUT_DIR)
     flush_dir(HOSTING_DIR)
-
-    files = request.files.getlist("file[]")
-
-    z_offset = request.form.get("z_offset")
-    file_names = request.form.getlist("file_name[]")
-    tool_indices = request.form.getlist("tool_index[]")
-    extrusion_multipliers = request.form.getlist("extrusion_multiplier[]")
-    initial_offsets = request.form.getlist("initial_extrusion_offset[]")
-
-    print(files)
-    print(z_offset)
-    print(tool_indices)
-    print(extrusion_multipliers)
-    print(initial_offsets)
-
 
     files = request.files.getlist("file[]")
     for file in files:
