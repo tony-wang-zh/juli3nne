@@ -19,7 +19,11 @@ class GcodeProcessor:
             tool_index_next = configs[i][1]  # dummy value
             if i < len(configs) - 1:
                 tool_index_next = configs[i+1][1]  # store the tool index of the next layer
-            config = configs[i]
+
+            # TODO @zw3144
+            # this is a temperary patch only 
+            # this whole file needs update to process gcode for actual discrete tools
+            config = list(configs[i]) 
             config.append(tool_index_next)
             new_configs.append(config)
         self.CONFIGS = configs
@@ -62,7 +66,7 @@ class GcodeProcessor:
         print(config)
 
         current_tool_index = config[1]
-        next_tool_index = config[4]
+        # next_tool_index = config[4]
 
         new_str = "" 
         x_move = 0
