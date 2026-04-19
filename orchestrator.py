@@ -5,8 +5,7 @@ from generate_gcode_prusa import GcodeGenerator
 from fix_depths import GcodeDepthFixer
 # from process_gcode import GcodeProcessor
 from process_gcode_prusa import GcodeProcessor
-from dataclasses import dataclass
-
+from configs import *
 
 def layer_config_regex(search):
     return re.search("^[0-9][0-9]?\.[Ss][Tt][lL],\s?[0-9][0-9]?,\s?.*,\s?[0-9][0-9]?[0-9]?,?\s?$", search.rstrip())
@@ -25,6 +24,11 @@ class Orchestrator:
         self.CONFIGS, self.OFFSET = self.generate_config_and_offset()
         self.CONFIGS, self.OFFSET = self.generate_config_and_offset_tools_compatible()
 
+
+    # deprecated 
+    # old config format:
+    # for each stl file, 
+    # [stl file name, tool index, extrusion multiplier, initial offset]
     def generate_config_and_offset(self):
         f = open(self.INPUT_DIR + "/config.txt", "r")
         layers = [line.rstrip() for line in f if layer_config_regex(line)]
@@ -42,7 +46,7 @@ class Orchestrator:
         f = open(self.INPUT_DIR + "/config.txt", "r")
 
         z_offset = -1
-        configs = [] # a list of tuples, backward compatible
+        configs = [] # a list of PartConfig
 
         for line in f:
             line_data = line.split("#")[0] # to allow for comments 
@@ -50,26 +54,56 @@ class Orchestrator:
 
             if 'stl' in tokens[0]: # stl file lines
                 file_name = tokens[0].strip().upper()
-                match tokens[1].strip(): # written with match 
-                    case 'liquid' | 'powder': 
+                match tokens[1].strip(): 
+                    case 'liquid': 
+                        tool_index = int(tokens[2])
+                        dispense_z_offset = float(tokens[3])
+                        configs.append(
+                            LiquidPartConfig(
+                                file_name,
+                                tool_index, 
+                                dispense_z_offset
+                            )
+                        )
+                    case 'powder': 
                         # liquid and powder only has 1 arg, 
                         # off set of print head when spraying 
                         tool_index = int(tokens[2])
-                        offset = float(tokens[3])
-                        configs.append((file_name, tool_index, offset))
+                        dispense_z_offset = float(tokens[3])
+                        configs.append(
+                            LiquidPartConfig(
+                                file_name,
+                                tool_index, 
+                                dispense_z_offset
+                            )
+                        )
                     case 'solid': 
                         # solid has 2 args 
                         # first is height of block 
                         # second is inital position for U axis based on amount of tube filled
                         tool_index = int(tokens[2])
                         block_height = float(tokens[3])
-                        initial_offset = float(tokens[4])
-                        configs.append((file_name, tool_index, block_height, initial_offset))
+                        initial_u_offset = float(tokens[4])
+                        configs.append(
+                            SolidPartConfig(
+                                file_name,
+                                tool_index,
+                                block_height,
+                                initial_u_offset
+                            )
+                        )
                     case _: # standard aka syringe 
                         tool_index = int(tokens[1])
                         extrusion_multiplier = float(tokens[2])
-                        initial_offset = float(tokens[3])
-                        configs.append((file_name, tool_index, extrusion_multiplier, initial_offset))
+                        initial_u_offset = float(tokens[3])
+                        configs.append(
+                            PastePartConfig(
+                                file_name,
+                                tool_index,
+                                extrusion_multiplier,
+                                initial_u_offset
+                            )
+                        )
             elif 'offset' in tokens[0]: # global offset line
                 z_offset = float(tokens[0].split("=")[-1].strip())
             else:
