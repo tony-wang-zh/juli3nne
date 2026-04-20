@@ -1,0 +1,3 @@
+This contains example of how to model things in CAD to control the disceret tools (solid and liquid spray, solid block)
+The idea is to model a very small cylinder so that after slicing, the gocde tells use where to move print head 
+Then the actual extrusion is replaced with hard coded gcode control blocks for each tool  
