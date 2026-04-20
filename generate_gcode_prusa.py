@@ -12,6 +12,10 @@ import numpy as np
 
 from pathlib import Path
 from typing import Union
+from configs import *
+
+
+DEFAULT_EXTRUSION_MULTIPLIER = 0.02 # for non paste tool, doesn't affect slicing 
 
 @staticmethod
 def find_min_max(obj):
@@ -62,7 +66,11 @@ class GcodeGenerator:
     def generate_extrusion_multiplier_dict(self):
         extrusion_multipliers = {}
         for config in self.CONFIGS:
-            extrusion_multipliers[config[0]] = config[2]
+            # extrusion_multipliers[config[0]] = config[2]
+            if get_config_tool_type(config) == ToolType.PASTE:
+                extrusion_multipliers[config.stl_file_name] = config.extrusion_multiplier
+            else:
+                extrusion_multipliers[config.stl_file_name] = DEFAULT_EXTRUSION_MULTIPLIER
         return extrusion_multipliers
 
     def generate_gcode_metadata(self, stl_files):

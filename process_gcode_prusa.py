@@ -1,5 +1,5 @@
 import os
-
+from configs import *
 
 class GcodeProcessor:
     """
@@ -14,18 +14,19 @@ class GcodeProcessor:
     U_AXIS_LIMIT = 95
 
     def __init__(self, configs):
-        new_configs = []
-        for i in range(len(configs)):
-            tool_index_next = configs[i][1]  # dummy value
-            if i < len(configs) - 1:
-                tool_index_next = configs[i+1][1]  # store the tool index of the next layer
 
-            # TODO @zw3144
-            # this is a temperary patch only 
-            # this whole file needs update to process gcode for actual discrete tools
-            config = list(configs[i]) 
-            config.append(tool_index_next)
-            new_configs.append(config)
+        # TODO @zw3144
+        # re write adaptive tool change logic 
+        # new_configs = []
+        # for i in range(len(configs)):
+        #     tool_index_next = configs[i].tool_index  # dummy value
+        #     if i < len(configs) - 1:
+        #         tool_index_next = configs[i+1].tool_index  # store the tool index of the next layer
+
+        #     config = list(configs[i]) 
+        #     config.append(tool_index_next)
+        #     new_configs.append(config)
+        
         self.CONFIGS = configs
         self.TEMP_DIR = "./temp"
         self.OUTPUT_DIR = "./output"
@@ -42,7 +43,7 @@ class GcodeProcessor:
     def get_gcode_file(self, config):
         files = os.listdir(self.TEMP_DIR)
         file = None
-        prefix = str(config[0][:-4])
+        prefix = str(config.stl_file_name[:-4])
         for f_name in files:
             if f_name[-6:].lower() != ".gcode":
                 continue
@@ -61,11 +62,15 @@ class GcodeProcessor:
         return open(file, "r").read()
 
     def clean_gcode_file(self, config, file, is_last_file):
-        initial_extruder_depth = float(config[3])
+        # temperary 
+        if get_config_tool_type(config) != ToolType.PASTE:
+            raise NotImplementedError()
 
+        print(f"processing gcode from file {file}")
         print(config)
 
-        current_tool_index = config[1]
+        initial_extruder_depth = config.initial_u_offset
+        current_tool_index = config.tool_index
         # next_tool_index = config[4]
 
         new_str = "" 
@@ -167,7 +172,7 @@ class GcodeProcessor:
         for i in range(len(self.CONFIGS)):
             config = self.CONFIGS[i]
             last = i == len(self.CONFIGS) - 1
-            config_file = self.get_gcode_file(config)
-            processed_gcode = self.clean_gcode_file(config, config_file, last)
+            gcode_file = self.get_gcode_file(config)
+            processed_gcode = self.clean_gcode_file(config, gcode_file, last)
             gcodes.append(processed_gcode)
         self.write_output_file(gcodes)

@@ -1,6 +1,6 @@
 import re
 from process_gcode import GcodeProcessor
-
+from configs import *
 
 class GcodeDepthFixer:
 	def __init__(self, configs):
@@ -41,7 +41,7 @@ class GcodeDepthFixer:
 		return max_
 
 	def write_config(self, configs, i):
-		self.CONFIGS[i][3] = configs[i][3]
+		self.CONFIGS[i].initial_u_offset = configs[i].initial_u_offset
 
 	def fix_depths(self):
 		configs = self.CONFIGS
@@ -49,14 +49,18 @@ class GcodeDepthFixer:
 		for i in range(0, len(configs)):
 			print('------------------------------------------------')
 			config = configs[i]
-			file_initial = config[0].split('.')[0]
-			tool = config[1]
-			initial_depth = config[3]
+			if get_config_tool_type(config) != ToolType.PASTE:
+				print('discrete tool, skipping depth fixing')
+				continue
+
+			file_initial = config.stl_file_name.split('.')[0]
+			tool = config.tool_index
+			initial_depth = config.initial_u_offset
 			if tool not in depth_map:
 				depth_map[tool] = float(initial_depth)
 			else:
-				configs[i][3] = str(depth_map[tool])
-				print('Updating config corresponding to file: ' + str(config[0]))
+				config.initial_u_offset = str(depth_map[tool])
+				print('Updating config corresponding to file: ' + str(config.stl_file_name))
 				self.write_config(configs, i)
 			gcode = open(self.TEMP_DIR + '/' + file_initial + '.gcode', "r")
 			depth = self.get_extruder_depth(gcode)
