@@ -206,48 +206,55 @@ class GcodeProcessor:
 
         # start of proceed gcode 
         new_str = "" 
-        new_str += f';;;;;;;;;;;\n; STARTING PART {config.stl_file_name} \n;;;;;;;;;;;\n'
+        new_str += f'\n;;;;;;;;;;;\n; STARTING PART {config.stl_file_name} \n;;;;;;;;;;;\n'
         if self.should_pick_up_tool[config.stl_file_name]:
             new_str += self.get_tool_gcode(config.tool_index, True)
 
         tool_control_gcode = self.get_discrete_tool_gcode(get_config_tool_type(config))
         f = open(file, "r")
 
-        next_min_x = float('inf') 
-        next_max_x = float('-inf') 
-        next_min_y = float('inf') 
-        next_max_y = float('-inf') 
-        next_z = 0 
+        min_x = float('inf') 
+        max_x = float('inf') 
+        min_y = float('inf') 
+        max_y = float('inf') 
+        z = float('inf')
 
         for line in f:
             # find next dispense position 
-            if 'G1 Z' in line and 'lift' not in line: # find z from move line
-                next_z = float(line.split('Z')[1].split(' ')[0]) - self.FIRST_LAYER_HEIGHT
-            elif 'G1 X' in line and 'Y' in line and 'E' in line: # find x y range from extrusion lines
+            if line[0] == ';':
+                continue
+            elif 'G1 Z' in line and 'lift' not in line: # find z from move line
+                z = float(line.split('Z')[1].split(' ')[0]) - self.FIRST_LAYER_HEIGHT
+            elif 'G1 F600.000' in line or 'G1 F600' in line: 
+                # this line always appear before layer print start 
+                # use as signal to reset xy values
+                min_x = float('inf') 
+                max_x = float('inf') 
+                min_y = float('inf') 
+                max_y = float('inf') 
+                # z value do not reset because there might be more than one dispense at this z 
+            elif 'G1' in line and 'X' in line and 'Y' in line and 'E' in line: # find x y range from extrusion lines
                 line_x = float(line.split('X')[1].split(' ')[0])
                 line_y = float(line.split('Y')[1].split(' ')[0])
-                next_min_x = min(next_min_x, line_x)
-                next_max_x = max(next_max_x, line_x)
-                next_min_y = min(next_min_y, line_y)
-                next_max_y = max(next_max_y, line_y)
-            elif '; retract' in line or '; reset extrusion distance' in line: # end of layer, now find xy
-                next_x = round((next_min_x + next_max_x) / 2.0, 3)
-                next_y = round((next_min_y + next_max_y) / 2.0, 3)
-                if abs(next_x) == float('inf') or abs(next_y) == float('inf'):
+                min_x = line_x if min_x == float('inf') else min(min_x, line_x)
+                max_x = line_x if max_x == float('inf') else max(max_x, line_x)
+                min_y = line_y if min_y == float('inf') else min(min_y, line_y)
+                max_y = line_y if max_y == float('inf') else max(max_y, line_y)
+            elif ('; retract' in line 
+                and float('inf') not in [min_x, max_x, min_y, max_y, z]): # end of layer, now find xy
+                x = round((min_x + max_x) / 2.0, 3)
+                y = round((min_y + max_y) / 2.0, 3)
+                if abs(x) == float('inf') or abs(y) == float('inf'):
                     raise ValueError('unexpected error found, inf min x or min y for discrete tool')
 
                 # construct new gcode 
-                new_str += f"G1 X{next_x} Y{next_y} ; move to dispense point\n"
-                new_str += f"G1 Z{next_z} ; move to dispense point\n"
+                new_str += f"G1 X{x} Y{y} ; move to dispense point\n"
+                new_str += f"G1 Z{z} ; move to dispense point\n"
                 new_str += tool_control_gcode
-                new_str += "\n"
+                new_str += "\n"                
+            elif '; disable motors' in line:
+                break
 
-                # reset 
-                next_min_x = float('inf') 
-                next_max_x = float('-inf') 
-                next_min_y = float('inf') 
-                next_max_y = float('-inf') 
-                next_z = 0 
 
         if self.should_drop_off_tool[config.stl_file_name]:
             drop_tool_gcode = self.get_tool_gcode(config.tool_index, False)
@@ -258,8 +265,8 @@ class GcodeProcessor:
         else:
             new_str += 'G1 Z75 F1000;\n'
 
-        new_str += f';;;;;;;;;;;\n; ENDING PART {config.stl_file_name} \n;;;;;;;;;;;\n'
-
+        new_str += f'\n;;;;;;;;;;;\n; ENDING PART {config.stl_file_name} \n;;;;;;;;;;;\n'
+        return new_str
 
     def process_solid_part_gcode(self, config, file, is_last_file):
         pass

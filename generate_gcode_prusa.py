@@ -80,6 +80,7 @@ class GcodeGenerator:
         delta_z = 0
         metadata = []
         for f in stl_files:
+            f = f.upper()
             ext_multiplier = self.ext_multipliers[f]
             mesh_ = mesh.Mesh.from_file(self.INPUT_DIR + '/' + f)
             #mesh_.rotate(np.array([1, 1, -1]), np.deg2rad(90))
