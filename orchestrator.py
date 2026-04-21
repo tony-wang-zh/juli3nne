@@ -11,6 +11,7 @@ def layer_config_regex(search):
     return re.search("^[0-9][0-9]?\.[Ss][Tt][lL],\s?[0-9][0-9]?,\s?.*,\s?[0-9][0-9]?[0-9]?,?\s?$", search.rstrip())
 
 
+# TODO: @zw3144 update this regex / parsing to allow spaces 
 def offset_regex(search):
     return re.search("^offset\=.*$", search)
 
@@ -71,7 +72,7 @@ class Orchestrator:
                         tool_index = int(tokens[2])
                         dispense_z_offset = float(tokens[3])
                         configs.append(
-                            LiquidPartConfig(
+                            PowderPartConfig(
                                 file_name,
                                 tool_index, 
                                 dispense_z_offset
