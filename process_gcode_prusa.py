@@ -1,5 +1,6 @@
 import os
 from configs import *
+import re
 
 class GcodeProcessor:
     """
@@ -18,7 +19,9 @@ class GcodeProcessor:
         self.TEMP_DIR = "./temp"
         self.OUTPUT_DIR = "./output"
         self.TOOL_DIR = "./toolchange/generatedTCgcode"
+        self.DISCRETE_TOOL_GCODE_DIR = "./discrete_tool_gcode_files"
         self.END_STRING = "G01 Z60.4 F5000\nG01 X0.0 Y200.00 Z80.00 F2000.00" # return to default?
+        self.FIRST_LAYER_HEIGHT = 0.35
 
         # re-implemented adaptive tool pick up/drop
         # if two consecutive parts are printed with same tool 
@@ -67,7 +70,6 @@ class GcodeProcessor:
 
         initial_extruder_depth = config.initial_u_offset
         current_tool_index = config.tool_index
-        # next_tool_index = config[4]
 
         new_str = "" 
         x_move = 0
@@ -173,11 +175,91 @@ class GcodeProcessor:
 
         return new_str + end_string
 
-    def process_liquid_part_gcode(self, config, file, is_last_file):
-        pass
 
-    def process_powder_part_gcode(self, config, file, is_last_file):
-        pass
+    # get gcode block to control discrete tools to be spliced in
+    def get_discrete_tool_gcode(self, tool_type):
+        tool_name = ""
+        match tool_type:
+            case ToolType.LIQUID:
+                tool_name = "liquid"
+            case ToolType.POWDER:
+                tool_name = "powder"
+            case ToolType.SOLID:
+                tool_name = "solid"
+            case  _:
+                raise FileNotFoundError("only discrete tools have control gcode blocks") 
+ 
+        file_name = tool_name + ".gcode"
+        file = os.path.join(self.DISCRETE_TOOL_GCODE_DIR, file_name)
+        return open(file, "r").read()
+
+
+    #TODO: @zw3144 tool change code should be factored out of different tool type code 
+    #TODO: @zw3144 liquid and powder are also amost the same so should refactor 
+    # get gcode from prusa for a liquid tool 
+    # example see discrete_tool_control_stl_files/two_dots_h035_d12.gcode
+    # retrive positions from that gcode 
+    # then splice in control gcode blocks for tool
+    def process_liquid_or_powder_part_gcode(self, config, file, is_last_file):
+        print(f"processing gcode from file {file}")
+        print(config)
+
+        # start of proceed gcode 
+        new_str = "" 
+        new_str += f';;;;;;;;;;;\n; STARTING PART {config.stl_file_name} \n;;;;;;;;;;;\n'
+        if self.should_pick_up_tool[config.stl_file_name]:
+            new_str += self.get_tool_gcode(config.tool_index, True)
+
+        tool_control_gcode = self.get_discrete_tool_gcode(get_config_tool_type(config))
+        f = open(file, "r")
+
+        next_min_x = float('inf') 
+        next_max_x = float('-inf') 
+        next_min_y = float('inf') 
+        next_max_y = float('-inf') 
+        next_z = 0 
+
+        for line in f:
+            # find next dispense position 
+            if 'G1 Z' in line and 'lift' not in line: # find z from move line
+                next_z = float(line.split('Z')[1].split(' ')[0]) - self.FIRST_LAYER_HEIGHT
+            elif 'G1 X' in line and 'Y' in line and 'E' in line: # find x y range from extrusion lines
+                line_x = float(line.split('X')[1].split(' ')[0])
+                line_y = float(line.split('Y')[1].split(' ')[0])
+                next_min_x = min(next_min_x, line_x)
+                next_max_x = max(next_max_x, line_x)
+                next_min_y = min(next_min_y, line_y)
+                next_max_y = max(next_max_y, line_y)
+            elif '; retract' in line or '; reset extrusion distance' in line: # end of layer, now find xy
+                next_x = round((next_min_x + next_max_x) / 2.0, 3)
+                next_y = round((next_min_y + next_max_y) / 2.0, 3)
+                if abs(next_x) == float('inf') or abs(next_y) == float('inf'):
+                    raise ValueError('unexpected error found, inf min x or min y for discrete tool')
+
+                # construct new gcode 
+                new_str += f"G1 X{next_x} Y{next_y} ; move to dispense point\n"
+                new_str += f"G1 Z{next_z} ; move to dispense point\n"
+                new_str += tool_control_gcode
+                new_str += "\n"
+
+                # reset 
+                next_min_x = float('inf') 
+                next_max_x = float('-inf') 
+                next_min_y = float('inf') 
+                next_max_y = float('-inf') 
+                next_z = 0 
+
+        if self.should_drop_off_tool[config.stl_file_name]:
+            drop_tool_gcode = self.get_tool_gcode(config.tool_index, False)
+            new_str += drop_tool_gcode
+
+        if is_last_file:
+            new_str += self.END_STRING
+        else:
+            new_str += 'G1 Z75 F1000;\n'
+
+        new_str += f';;;;;;;;;;;\n; ENDING PART {config.stl_file_name} \n;;;;;;;;;;;\n'
+
 
     def process_solid_part_gcode(self, config, file, is_last_file):
         pass
@@ -185,10 +267,8 @@ class GcodeProcessor:
     def process_gcode(self, config, gcode_file, last):
         tool_type_for_file = get_config_tool_type(config)
         match tool_type_for_file:
-            case ToolType.LIQUID:
-                return self.process_liquid_part_gcode(config, gcode_file, last)
-            case ToolType.POWDER:
-                return self.process_powder_part_gcode(config, gcode_file, last)
+            case ToolType.LIQUID | ToolType.POWDER:
+                return self.process_liquid_or_powder_part_gcode(config, gcode_file, last)
             case ToolType.SOLID:
                 return self.process_solid_part_gcode(config, gcode_file, last)
             case  _:
