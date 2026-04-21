@@ -61,11 +61,7 @@ class GcodeProcessor:
             file = os.path.join(self.TOOL_DIR, "tool_drop_" + str(index) + ".gcode")
         return open(file, "r").read()
 
-    def clean_gcode_file(self, config, file, is_last_file):
-        # temperary 
-        if get_config_tool_type(config) != ToolType.PASTE:
-            raise NotImplementedError()
-
+    def process_paste_part_gcode(self, config, file, is_last_file):
         print(f"processing gcode from file {file}")
         print(config)
 
@@ -177,12 +173,34 @@ class GcodeProcessor:
 
         return new_str + end_string
 
+    def process_liquid_part_gcode(self, config, file, is_last_file):
+        pass
+
+    def process_powder_part_gcode(self, config, file, is_last_file):
+        pass
+
+    def process_solid_part_gcode(self, config, file, is_last_file):
+        pass
+
+    def process_gcode(self, config, gcode_file, last):
+        tool_type_for_file = get_config_tool_type(config)
+        match tool_type_for_file:
+            case ToolType.LIQUID:
+                return self.process_liquid_part_gcode(config, gcode_file, last)
+            case ToolType.POWDER:
+                return self.process_powder_part_gcode(config, gcode_file, last)
+            case ToolType.SOLID:
+                return self.process_solid_part_gcode(config, gcode_file, last)
+            case  _:
+                return self.process_paste_part_gcode(config, gcode_file, last)
+
+
     def clean_and_concatenate(self):
         gcodes = []
         for i in range(len(self.CONFIGS)):
             config = self.CONFIGS[i]
             last = i == len(self.CONFIGS) - 1
             gcode_file = self.get_gcode_file(config)
-            processed_gcode = self.clean_gcode_file(config, gcode_file, last)
+            processed_gcode = self.process_gcode(config, gcode_file, last)
             gcodes.append(processed_gcode)
         self.write_output_file(gcodes)
