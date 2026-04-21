@@ -14,24 +14,24 @@ class GcodeProcessor:
     U_AXIS_LIMIT = 95
 
     def __init__(self, configs):
-
-        # TODO @zw3144
-        # re write adaptive tool change logic 
-        # new_configs = []
-        # for i in range(len(configs)):
-        #     tool_index_next = configs[i].tool_index  # dummy value
-        #     if i < len(configs) - 1:
-        #         tool_index_next = configs[i+1].tool_index  # store the tool index of the next layer
-
-        #     config = list(configs[i]) 
-        #     config.append(tool_index_next)
-        #     new_configs.append(config)
-        
         self.CONFIGS = configs
         self.TEMP_DIR = "./temp"
         self.OUTPUT_DIR = "./output"
         self.TOOL_DIR = "./toolchange/generatedTCgcode"
         self.END_STRING = "G01 Z60.4 F5000\nG01 X0.0 Y200.00 Z80.00 F2000.00" # return to default?
+
+        # re-implemented adaptive tool pick up/drop
+        # if two consecutive parts are printed with same tool 
+        # no tool change occur 
+        self.should_pick_up_tool = {}
+        self.should_drop_off_tool = {}
+        for i in range(len(configs)):
+            should_pick_up_tool = configs[i - 1].tool_index != configs[i].tool_index if i - 1 >= 0 else True
+            should_drop_off_tool = configs[i + 1].tool_index != configs[i].tool_index if i + 1 < len(configs) else True
+
+            file_name = configs[i].stl_file_name
+            self.should_pick_up_tool[file_name] = should_pick_up_tool
+            self.should_drop_off_tool[file_name] = should_drop_off_tool
 
     def write_output_file(self, gcodes):
         f = open(self.OUTPUT_DIR + '/combined.gcode', "w+")
@@ -81,8 +81,9 @@ class GcodeProcessor:
         do_extrude = 0
         add_extruder_init = True
 
-        pickup_tool_gcode = self.get_tool_gcode(current_tool_index, True)
-        new_str += pickup_tool_gcode
+        new_str += f';;;;;;;;;;;\n; STARTING PART {config.stl_file_name} \n;;;;;;;;;;;\n'
+        if self.should_pick_up_tool[config.stl_file_name]:
+            new_str += self.get_tool_gcode(current_tool_index, True)
 
         f = open(file, "r")
 
@@ -147,23 +148,32 @@ class GcodeProcessor:
                 total_dist_moved += total_extrusion_in_layer
                 current_layer_last_e_value = LAYER_START_E_VALUE
                 
+                # print("debugging")
+                # print(initial_extruder_depth)
+                # print(total_dist_moved)
+                # print(type(initial_extruder_depth))
+                # print(type(total_dist_moved))
+
                 if initial_extruder_depth+total_dist_moved > self.U_AXIS_LIMIT:
                     raise ValueError("Tool "+ str(current_tool_index)+ " exceeded maximum extrustion distance")
 
 
-        end_string = ';;;;;;;;;;;\n; Tool Change Code\n;;;;;;;;;\nG92 E0;\n'
+        end_string = 'G92 E0;\n'
 
         # retract extrusion 
         end_string += 'G1 E-' + str(round((total_dist_moved + initial_extruder_depth), 3))
         end_string += ' F2000; retract to 0\nG92 E0;\n'
 
-        drop_tool_gcode = self.get_tool_gcode(current_tool_index, False)
-        end_string += drop_tool_gcode
+        if self.should_drop_off_tool[config.stl_file_name]:
+            drop_tool_gcode = self.get_tool_gcode(current_tool_index, False)
+            end_string += drop_tool_gcode
 
         if is_last_file:
             end_string += self.END_STRING
         else:
-            end_string = end_string + 'G1 Z75 F1000;\n'+'G28 E0 F1000;;\n'
+            end_string += 'G1 Z75 F1000;\n'+'G28 E0 F1000;;\n'
+
+        end_string += f';;;;;;;;;;;\n; ENDING PART {config.stl_file_name} \n;;;;;;;;;;;\n'
 
         return new_str + end_string
 
