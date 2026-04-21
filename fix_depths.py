@@ -59,7 +59,7 @@ class GcodeDepthFixer:
 			if tool not in depth_map:
 				depth_map[tool] = float(initial_depth)
 			else:
-				config.initial_u_offset = str(depth_map[tool])
+				config.initial_u_offset = float(depth_map[tool])
 				print('Updating config corresponding to file: ' + str(config.stl_file_name))
 				self.write_config(configs, i)
 			gcode = open(self.TEMP_DIR + '/' + file_initial + '.gcode', "r")
