@@ -66,7 +66,6 @@ class GcodeGenerator:
     def generate_extrusion_multiplier_dict(self):
         extrusion_multipliers = {}
         for config in self.CONFIGS:
-            # extrusion_multipliers[config[0]] = config[2]
             if get_config_tool_type(config) == ToolType.PASTE:
                 extrusion_multipliers[config.stl_file_name] = config.extrusion_multiplier
             else:

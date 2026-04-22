@@ -64,7 +64,7 @@ class GcodeProcessor:
             file = os.path.join(self.TOOL_DIR, "tool_drop_" + str(index) + ".gcode")
         return open(file, "r").read()
 
-    def process_paste_part_gcode(self, config, file, is_last_file):
+    def process_paste_part_gcode(self, config, file):
         print(f"processing gcode from file {file}")
         print(config)
 
@@ -78,10 +78,6 @@ class GcodeProcessor:
         total_dist_moved = 0.0
         do_extrude = 0
         add_extruder_init = True
-
-        new_str += f';;;;;;;;;;;\n; STARTING PART {config.stl_file_name} \n;;;;;;;;;;;\n'
-        if self.should_pick_up_tool[config.stl_file_name]:
-            new_str += self.get_tool_gcode(current_tool_index, True)
 
         f = open(file, "r")
 
@@ -130,7 +126,6 @@ class GcodeProcessor:
                 to_add += ' F50;\nG92 E0;\n'
                 new_str += to_add
                 add_extruder_init = False
-
             
             if ';' in line:
                 command = line.split(";")[0] # skipping comment 
@@ -146,32 +141,13 @@ class GcodeProcessor:
                 total_dist_moved += total_extrusion_in_layer
                 current_layer_last_e_value = LAYER_START_E_VALUE
                 
-                # print("debugging")
-                # print(initial_extruder_depth)
-                # print(total_dist_moved)
-                # print(type(initial_extruder_depth))
-                # print(type(total_dist_moved))
-
                 if initial_extruder_depth+total_dist_moved > self.U_AXIS_LIMIT:
                     raise ValueError("Tool "+ str(current_tool_index)+ " exceeded maximum extrustion distance")
 
-
         end_string = 'G92 E0;\n'
-
         # retract extrusion 
         end_string += 'G1 E-' + str(round((total_dist_moved + initial_extruder_depth), 3))
         end_string += ' F2000; retract to 0\nG92 E0;\n'
-
-        if self.should_drop_off_tool[config.stl_file_name]:
-            drop_tool_gcode = self.get_tool_gcode(current_tool_index, False)
-            end_string += drop_tool_gcode
-
-        if is_last_file:
-            end_string += self.END_STRING
-        else:
-            end_string += 'G1 Z75 F1000;\n'+'G28 E0 F1000;;\n'
-
-        end_string += f';;;;;;;;;;;\n; ENDING PART {config.stl_file_name} \n;;;;;;;;;;;\n'
 
         return new_str + end_string
 
@@ -194,22 +170,16 @@ class GcodeProcessor:
         return open(file, "r").read()
 
 
-    #TODO: @zw3144 tool change code should be factored out of different tool type code 
-    #TODO: @zw3144 liquid and powder are also amost the same so should refactor 
     # get gcode from prusa for a liquid tool 
     # example see discrete_tool_control_stl_files/two_dots_h035_d12.gcode
     # retrive positions from that gcode 
     # then splice in control gcode blocks for tool
-    def process_liquid_or_powder_part_gcode(self, config, file, is_last_file):
+    def process_liquid_or_powder_part_gcode(self, config, file):
         print(f"processing gcode from file {file}")
         print(config)
 
         # start of proceed gcode 
-        new_str = "" 
-        new_str += f'\n;;;;;;;;;;;\n; STARTING PART {config.stl_file_name} \n;;;;;;;;;;;\n'
-        if self.should_pick_up_tool[config.stl_file_name]:
-            new_str += self.get_tool_gcode(config.tool_index, True)
-
+        new_gcode = "" 
         tool_control_gcode = self.get_discrete_tool_gcode(get_config_tool_type(config))
         f = open(file, "r")
 
@@ -248,39 +218,52 @@ class GcodeProcessor:
                     raise ValueError('unexpected error found, inf min x or min y for discrete tool')
 
                 # construct new gcode 
-                new_str += f"G1 X{x} Y{y} ; move to dispense point\n"
-                new_str += f"G1 Z{z} ; move to dispense point\n"
-                new_str += tool_control_gcode
-                new_str += "\n"                
+                new_gcode += f"G1 X{x} Y{y} ; move to dispense point\n"
+                new_gcode += f"G1 Z{z} ; move to dispense point\n"
+                new_gcode += tool_control_gcode
+                new_gcode += "\n"                
             elif '; disable motors' in line:
                 break
 
+        return new_gcode
 
-        if self.should_drop_off_tool[config.stl_file_name]:
-            drop_tool_gcode = self.get_tool_gcode(config.tool_index, False)
-            new_str += drop_tool_gcode
+    # TODO
+    def process_solid_part_gcode(self, config, file):
+        return ""
 
-        if is_last_file:
-            new_str += self.END_STRING
-        else:
-            new_str += 'G1 Z75 F1000;\n'
-
-        new_str += f'\n;;;;;;;;;;;\n; ENDING PART {config.stl_file_name} \n;;;;;;;;;;;\n'
-        return new_str
-
-    def process_solid_part_gcode(self, config, file, is_last_file):
-        pass
-
-    def process_gcode(self, config, gcode_file, last):
+    # process gcode for a stl file 
+    # the start and end for each file is same regardless of tool type
+    def process_gcode(self, config, gcode_file, is_last_file):
         tool_type_for_file = get_config_tool_type(config)
+
+         # start and tool pickup  
+        gcode = f'\n;;;;;;;;;;;\n; STARTING PART {config.stl_file_name} \n;;;;;;;;;;;\n'
+        if self.should_pick_up_tool[config.stl_file_name]:
+            gcode += self.get_tool_gcode(config.tool_index, True)
+       
+        functional_gcode = ""
         match tool_type_for_file:
             case ToolType.LIQUID | ToolType.POWDER:
-                return self.process_liquid_or_powder_part_gcode(config, gcode_file, last)
+                functional_gcode =  self.process_liquid_or_powder_part_gcode(config, gcode_file)
             case ToolType.SOLID:
-                return self.process_solid_part_gcode(config, gcode_file, last)
-            case  _:
-                return self.process_paste_part_gcode(config, gcode_file, last)
+                functional_gcode =  self.process_solid_part_gcode(config, gcode_file)
+            case  ToolType.PASTE:
+                functional_gcode =  self.process_paste_part_gcode(config, gcode_file)
+            case _:
+                raise NotImplementedError() 
+        gcode += functional_gcode
 
+        # tool drop and ending 
+        if self.should_drop_off_tool[config.stl_file_name]:
+            gcode += self.get_tool_gcode(config.tool_index, False)
+
+        if is_last_file:
+            gcode += self.END_STRING
+        else:
+            gcode += 'G1 Z75 F1000;\n'+'G28 E0 F1000;;\n'
+        gcode += f'\n;;;;;;;;;;;\n; ENDING PART {config.stl_file_name} \n;;;;;;;;;;;\n'
+
+        return gcode
 
     def clean_and_concatenate(self):
         gcodes = []
