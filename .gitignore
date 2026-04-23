@@ -21,3 +21,6 @@ toolchange/generatedTCgcode
 .vscode/
 Slic3r/
 __pycache__/
+
+# MAC created files 
+**/.DS_Store

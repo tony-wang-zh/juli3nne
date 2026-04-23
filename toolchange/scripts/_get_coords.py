@@ -3,10 +3,12 @@ from googleapiclient import discovery, errors
 from httplib2 import Http 
 from oauth2client import file, tools, client
 
-def access_google_drive():
+# note for future dev: 
+# someone before us tried to set up google auth to fetch tool post csv from 
+# from a sheet owned by lionmail google account
+# but this was never in use afaik 
 
-    # Tony
-    # 10/25: this is not used so can safely comment out for now 
+def access_google_drive():
     return None
 
     # cred_file = # decide where to store these
