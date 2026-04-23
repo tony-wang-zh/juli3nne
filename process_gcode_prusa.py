@@ -65,9 +65,6 @@ class GcodeProcessor:
         return open(file, "r").read()
 
     def process_paste_part_gcode(self, config, file):
-        print(f"processing gcode from file {file}")
-        print(config)
-
         initial_extruder_depth = config.initial_u_offset
         current_tool_index = config.tool_index
 
@@ -152,35 +149,37 @@ class GcodeProcessor:
         return new_str + end_string
 
 
+    def generate_solid_tool_control_gcode(self, config):
+        return ""
+
+
     # get gcode block to control discrete tools to be spliced in
-    def get_discrete_tool_gcode(self, tool_type):
-        tool_name = ""
-        match tool_type:
-            case ToolType.LIQUID:
-                tool_name = "liquid"
-            case ToolType.POWDER:
-                tool_name = "powder"
-            case ToolType.SOLID:
-                tool_name = "solid"
-            case  _:
-                raise FileNotFoundError("only discrete tools have control gcode blocks") 
- 
-        file_name = tool_name + ".gcode"
-        file = os.path.join(self.DISCRETE_TOOL_GCODE_DIR, file_name)
-        return open(file, "r").read()
+    def get_discrete_tool_gcode(self, config):
+        tool_type = get_config_tool_type(config)
+        if tool_type in  [ToolType.LIQUID, ToolType.POWDER]:
+            # liquid and powder control block are static 
+            # so just read from file and return
+            tool_name = {
+                ToolType.LIQUID: "liquid",
+                ToolType.POWDER: "powder",
+            }[tool_type]
+            file_name = tool_name + ".gcode"
+            file = os.path.join(self.DISCRETE_TOOL_GCODE_DIR, file_name)
+            return open(file, "r").read()
+        elif tool_type == ToolType.SOLID:
+            return self.generate_solid_tool_control_gcode(config)
+        else:
+            raise NotImplementedError("unexpected else block reached for tool type match case")
 
 
-    # get gcode from prusa for a liquid tool 
+    # get gcode from prusa for a discerte 
     # example see discrete_tool_control_stl_files/two_dots_h035_d12.gcode
     # retrive positions from that gcode 
-    # then splice in control gcode blocks for tool
-    def process_liquid_or_powder_part_gcode(self, config, file):
-        print(f"processing gcode from file {file}")
-        print(config)
-
+    # then splice in control gcode blocks for tool, depending on which tool it is
+    def process_discrete_part_gcode(self, config, file):
         # start of proceed gcode 
         new_gcode = "" 
-        tool_control_gcode = self.get_discrete_tool_gcode(get_config_tool_type(config))
+        tool_control_gcode = self.get_discrete_tool_gcode(config)
         f = open(file, "r")
 
         min_x = float('inf') 
@@ -227,13 +226,12 @@ class GcodeProcessor:
 
         return new_gcode
 
-    # TODO
-    def process_solid_part_gcode(self, config, file):
-        return ""
-
     # process gcode for a stl file 
     # the start and end for each file is same regardless of tool type
     def process_gcode(self, config, gcode_file, is_last_file):
+        print(f"processing gcode from file {gcode_file}")
+        print(config)
+        
         tool_type_for_file = get_config_tool_type(config)
 
          # start and tool pickup  
@@ -243,10 +241,8 @@ class GcodeProcessor:
        
         functional_gcode = ""
         match tool_type_for_file:
-            case ToolType.LIQUID | ToolType.POWDER:
-                functional_gcode =  self.process_liquid_or_powder_part_gcode(config, gcode_file)
-            case ToolType.SOLID:
-                functional_gcode =  self.process_solid_part_gcode(config, gcode_file)
+            case ToolType.LIQUID | ToolType.POWDER | ToolType.SOLID:
+                functional_gcode =  self.process_discrete_part_gcode(config, gcode_file)
             case  ToolType.PASTE:
                 functional_gcode =  self.process_paste_part_gcode(config, gcode_file)
             case _:
