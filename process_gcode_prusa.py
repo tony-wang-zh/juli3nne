@@ -1,4 +1,5 @@
 import os
+import typing
 from configs import *
 import re
 
@@ -13,6 +14,20 @@ class GcodeProcessor:
     * Tool indices start from 0
     """
     U_AXIS_LIMIT = 95
+    # the offset needed to add to move commands 
+    # to cancel the offset of discrete tool center from syringe center 
+    # the positive / negative direciton follows direction of machine 
+    # which are: 
+    # X positive to the right (homed is at MIN x = 0)
+    # Y negative to outward (away from wall) (homed is at MAX y = 313)
+    # Z negative downward (homed is at MAX z = 175)
+    # tuple in (X, Y, Z) order 
+    SOLID_TOOL_OFFSETS = {
+        ToolType.LIQUID: (0, 0, 0),
+        ToolType.POWDER: (0, 50, 20),
+        ToolType.SOLID: (0, 0, 0),
+    }
+
 
     def __init__(self, configs):
         self.CONFIGS = configs
@@ -150,7 +165,11 @@ class GcodeProcessor:
 
 
     def generate_solid_tool_control_gcode(self, config):
-        return ""
+        raise NotImplementedError()
+        # config = typing.cast(SolidPartConfig, config)
+        # initial_u_offset = config.initial_u_offset
+        # block_height = config.block_height
+        # gcode = 
 
 
     # get gcode block to control discrete tools to be spliced in
@@ -215,6 +234,11 @@ class GcodeProcessor:
                 y = round((min_y + max_y) / 2.0, 3)
                 if abs(x) == float('inf') or abs(y) == float('inf'):
                     raise ValueError('unexpected error found, inf min x or min y for discrete tool')
+
+                x_offset, y_offset, z_offset = self.SOLID_TOOL_OFFSETS[get_config_tool_type(config)]
+                x += x_offset
+                y += y_offset
+                z += z_offset
 
                 # construct new gcode 
                 new_gcode += f"G1 X{x} Y{y} ; move to dispense point\n"
