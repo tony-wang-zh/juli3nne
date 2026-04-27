@@ -1,5 +1,6 @@
 import os
 import typing
+import typing
 from configs import *
 import re
 
@@ -14,20 +15,6 @@ class GcodeProcessor:
     * Tool indices start from 0
     """
     U_AXIS_LIMIT = 95
-    # the offset needed to add to move commands 
-    # to cancel the offset of discrete tool center from syringe center 
-    # the positive / negative direciton follows direction of machine 
-    # which are: 
-    # X positive to the right (homed is at MIN x = 0)
-    # Y negative to outward (away from wall) (homed is at MAX y = 313)
-    # Z negative downward (homed is at MAX z = 175)
-    # tuple in (X, Y, Z) order 
-    SOLID_TOOL_OFFSETS = {
-        ToolType.LIQUID: (0, 0, 0),
-        ToolType.POWDER: (0, 50, 20),
-        ToolType.SOLID: (0, 0, 0),
-    }
-
 
     def __init__(self, configs):
         self.CONFIGS = configs
@@ -170,7 +157,6 @@ class GcodeProcessor:
         # initial_u_offset = config.initial_u_offset
         # block_height = config.block_height
         # gcode = 
-
 
     # get gcode block to control discrete tools to be spliced in
     def get_discrete_tool_gcode(self, config):
