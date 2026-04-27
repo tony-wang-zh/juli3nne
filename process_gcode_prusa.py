@@ -232,7 +232,6 @@ class GcodeProcessor:
     def process_discrete_part_gcode(self, config, file):
         # start of proceed gcode 
         new_gcode = "" 
-        tool_control_gcode = self.get_discrete_tool_gcode(config)
         f = open(file, "r")
 
         min_x = float('inf') 
@@ -269,15 +268,20 @@ class GcodeProcessor:
                 if abs(x) == float('inf') or abs(y) == float('inf'):
                     raise ValueError('unexpected error found, inf min x or min y for discrete tool')
 
+                print(f"recovered x, y, z = {(x, y, z)}")
+                # copy these value when creating offset 
+                # because they might need to be used again for another dispense 
+                # e.g. ther won't be another z move line in gcode and z shouldn't change 
+
                 x_offset, y_offset, z_offset = self.DISCRETE_TOOL_OFFSETS[config.tool_type]
-                x += x_offset
-                y += y_offset
-                z += z_offset
+                move_x = x + x_offset
+                move_y = y + y_offset
+                move_z = z + z_offset
 
                 # construct new gcode 
-                new_gcode += f"G1 X{x} Y{y} ; move to dispense point\n"
-                new_gcode += f"G1 Z{z} ; move to dispense point\n"
-                new_gcode += tool_control_gcode
+                new_gcode += f"G1 X{move_x} Y{move_y} ; move to dispense point\n"
+                new_gcode += f"G1 Z{move_z} ; move to dispense point\n"
+                new_gcode += self.get_discrete_tool_gcode(config) # config might update between different dispenses for solid tool
                 new_gcode += "\n"                
             elif '; disable motors' in line:
                 break

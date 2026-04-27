@@ -9,15 +9,12 @@ G01 Y38 Z160 F500; insert comment
 G01 Y90 Z165 F500; insert comment
 G01 Y110 F1000; move away for more space
 G1 X189.993 Y208.002 ; move to dispense point
-G1 Z62.0 ; move to dispense point
+G1 Z59.0 ; move to dispense point
 ;;;
 ; start of one solid block extrusion 
 ;;;
 
-M950 P0 C"vfd"
-M280 P0 S0
-
-M208 U110 S0 ; temperary increase limit 
+M208 U115 S0 ; temperary increase limit 
 G1 U50.000 ; move u to initial offset
 G91 ; set all axis to relative positioning  
 
@@ -25,7 +22,7 @@ G91 ; set all axis to relative positioning
 G1 U15.000 F600 ; extrude solid block 
 
 ; move to extrude point, first fast and approach slow
-G1 Z-25.000 F1800
+G1 Z-44.000 F1800
 G1 Z-10.000 F200; 
 
 ; cut
@@ -34,7 +31,7 @@ M280 P0 S60 ; cut
 G4 P1000 ;wait for cut to finish
 
 G1 Z10.000 F200; move back up
-G1 Z25.000 F1800; move back up
+G1 Z44.000 F1800; move back up
 
 M280 P0 S0 ; uncut 
 G4 P1000 ; wait for uncut to finish
@@ -47,23 +44,20 @@ M208 U95 S0 ; reset extrusion liimt
 
 
 G1 X179.988 Y208.0 ; move to dispense point
-G1 Z112.0 ; move to dispense point
+G1 Z59.0 ; move to dispense point
 ;;;
 ; start of one solid block extrusion 
 ;;;
 
-M950 P0 C"vfd"
-M280 P0 S0
-
-M208 U110 S0 ; temperary increase limit 
-G1 U50.000 ; move u to initial offset
+M208 U115 S0 ; temperary increase limit 
+G1 U65.000 ; move u to initial offset
 G91 ; set all axis to relative positioning  
 
 ; extrude and z move 
 G1 U15.000 F600 ; extrude solid block 
 
 ; move to extrude point, first fast and approach slow
-G1 Z-25.000 F1800
+G1 Z-44.000 F1800
 G1 Z-10.000 F200; 
 
 ; cut
@@ -72,7 +66,7 @@ M280 P0 S60 ; cut
 G4 P1000 ;wait for cut to finish
 
 G1 Z10.000 F200; move back up
-G1 Z25.000 F1800; move back up
+G1 Z44.000 F1800; move back up
 
 M280 P0 S0 ; uncut 
 G4 P1000 ; wait for uncut to finish
