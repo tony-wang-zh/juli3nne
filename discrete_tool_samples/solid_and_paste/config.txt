@@ -1,4 +1,4 @@
 1.STL,1,0.02,17
 2.STL,2,0.02,45
-3.stl,powder,3
+3.stl,solid,3,15,50
 offset=1.5

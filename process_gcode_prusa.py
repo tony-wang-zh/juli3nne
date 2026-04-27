@@ -28,6 +28,7 @@ class GcodeProcessor:
         ToolType.POWDER: (0, 50, 20),
         ToolType.SOLID: (0, 0, 50),
     }
+    SOLID_TOOL_U_LIMIT = 110 # solid tool has higher u limit than paste
 
     def __init__(self, configs):
         self.CONFIGS = configs
@@ -174,21 +175,27 @@ class GcodeProcessor:
         inital_z_offset = self.SOLID_TOOL_OFFSETS[ToolType.SOLID][2]
         total_z_move_distance = inital_z_offset - block_height
         # slow down when approaching cut position 
-        fast_z_move_distance = total_z_move_distance * 3 / 4
-        approach_z_move_distance = total_z_move_distance * 4
+        approach_z_move_distance = 10
+        fast_z_move_distance = total_z_move_distance  - approach_z_move_distance
+
+        # check if there is enough material 
+        if initial_u_offset + block_height >= self.SOLID_TOOL_U_LIMIT:
+            raise ValueError(f"exceeding extrusion limit with solid tool at part {config.stl_file_name}")
 
         file_name = "solid.gcode"
         file = os.path.join(self.DISCRETE_TOOL_GCODE_DIR, file_name)
         gcode = open(file, "r").read()
 
-        gcode.replace("{initial_u_offset}", f"{initial_u_offset:.3f}")
-        gcode.replace("{block_height}", f"{block_height:.3f}")
-        gcode.replace("{total_z_move_distance}", f"{total_z_move_distance:.3f}")
-        gcode.replace("{fast_z_move_distance}", f"{fast_z_move_distance:.3f}")
-        gcode.replace("{approach_z_move_distance}", f"{approach_z_move_distance:.3f}")
+        gcode = (gcode.replace("{initial_u_offset}", f"{initial_u_offset:.3f}")
+                .replace("{block_height}", f"{block_height:.3f}")
+                .replace("{total_z_move_distance}", f"{total_z_move_distance:.3f}")
+                .replace("{fast_z_move_distance}", f"{fast_z_move_distance:.3f}")
+                .replace("{approach_z_move_distance}", f"{approach_z_move_distance:.3f}"))
 
         # initial u offset need to be increased after each cut 
         config.initial_u_offset += block_height
+
+        return gcode
 
 
     # get gcode block to control discrete tools to be spliced in
@@ -215,6 +222,7 @@ class GcodeProcessor:
     # example see discrete_tool_control_stl_files/two_dots_h035_d12.gcode
     # retrive positions from that gcode 
     # then splice in control gcode blocks for tool, depending on which tool it is
+    # note that the global Z offset is already taken into consideration when generating the gcode 
     def process_discrete_part_gcode(self, config, file):
         # start of proceed gcode 
         new_gcode = "" 

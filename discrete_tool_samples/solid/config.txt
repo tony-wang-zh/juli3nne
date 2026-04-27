@@ -1,0 +1,2 @@
+1.stl,solid,1,15,50
+z_offset=12
