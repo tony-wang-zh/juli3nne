@@ -19,28 +19,18 @@ class PartConfig:
 class PastePartConfig(PartConfig):
     extrusion_multiplier: float
     initial_u_offset: float
+    tool_type = ToolType.PASTE
 
 @dataclass
 class PowderPartConfig(PartConfig):
-    dispense_z_offset: float
+    tool_type = ToolType.POWDER
 
 @dataclass
 class LiquidPartConfig(PartConfig):
-    dispense_z_offset: float
+    tool_type = ToolType.LIQUID
 
 @dataclass
 class SolidPartConfig(PartConfig):
     block_height: float
     initial_u_offset: float
-
-@staticmethod
-def get_config_tool_type(config: PartConfig):
-    match config:
-        case PowderPartConfig():
-            return ToolType.POWDER
-        case LiquidPartConfig():
-            return ToolType.LIQUID
-        case SolidPartConfig():
-            return ToolType.SOLID
-        case _:
-            return ToolType.PASTE
+    tool_type = ToolType.SOLID

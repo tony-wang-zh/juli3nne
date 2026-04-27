@@ -174,7 +174,7 @@ class GcodeProcessor:
 
     # get gcode block to control discrete tools to be spliced in
     def get_discrete_tool_gcode(self, config):
-        tool_type = get_config_tool_type(config)
+        tool_type = config.tool_type
         if tool_type in  [ToolType.LIQUID, ToolType.POWDER]:
             # liquid and powder control block are static 
             # so just read from file and return
@@ -235,7 +235,7 @@ class GcodeProcessor:
                 if abs(x) == float('inf') or abs(y) == float('inf'):
                     raise ValueError('unexpected error found, inf min x or min y for discrete tool')
 
-                x_offset, y_offset, z_offset = self.SOLID_TOOL_OFFSETS[get_config_tool_type(config)]
+                x_offset, y_offset, z_offset = self.SOLID_TOOL_OFFSETS[config.tool_type]
                 x += x_offset
                 y += y_offset
                 z += z_offset
@@ -256,7 +256,7 @@ class GcodeProcessor:
         print(f"processing gcode from file {gcode_file}")
         print(config)
         
-        tool_type_for_file = get_config_tool_type(config)
+        tool_type_for_file = config.tool_type
 
          # start and tool pickup  
         gcode = f'\n;;;;;;;;;;;\n; STARTING PART {config.stl_file_name} \n;;;;;;;;;;;\n'

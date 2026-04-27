@@ -49,7 +49,7 @@ class GcodeDepthFixer:
 		for i in range(0, len(configs)):
 			print('------------------------------------------------')
 			config = configs[i]
-			if get_config_tool_type(config) != ToolType.PASTE:
+			if config.tool_type != ToolType.PASTE:
 				print('discrete tool, skipping depth fixing')
 				continue
 

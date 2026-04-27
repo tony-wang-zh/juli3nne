@@ -22,7 +22,7 @@ class Orchestrator:
         self.TEMP_DIR = './temp'
         self.OUTPUT_DIR = './output'
         self.flush_dirs()
-        self.CONFIGS, self.OFFSET = self.generate_config_and_offset()
+        # self.CONFIGS, self.OFFSET = self.generate_config_and_offset()
         self.CONFIGS, self.OFFSET = self.generate_config_and_offset_tools_compatible()
 
 
@@ -30,7 +30,7 @@ class Orchestrator:
     # old config format:
     # for each stl file, 
     # [stl file name, tool index, extrusion multiplier, initial offset]
-    def generate_config_and_offset(self):
+    def _generate_config_and_offset(self):
         f = open(self.INPUT_DIR + "/config.txt", "r")
         layers = [line.rstrip() for line in f if layer_config_regex(line)]
         configs = [[part.rstrip().upper() for part in layer.split(',')] for layer in layers]
@@ -63,7 +63,6 @@ class Orchestrator:
                             LiquidPartConfig(
                                 file_name,
                                 tool_index, 
-                                dispense_z_offset
                             )
                         )
                     case 'powder': 
@@ -75,7 +74,6 @@ class Orchestrator:
                             PowderPartConfig(
                                 file_name,
                                 tool_index, 
-                                dispense_z_offset
                             )
                         )
                     case 'solid': 
