@@ -15,6 +15,19 @@ class GcodeProcessor:
     * Tool indices start from 0
     """
     U_AXIS_LIMIT = 95
+    # the offset needed to add to move commands 
+    # to cancel the offset of discrete tool center from syringe center 
+    # the positive / negative direciton follows direction of machine 
+    # which are: 
+    # X positive to the right (homed is at MIN x = 0)
+    # Y negative to outward (away from wall) (homed is at MAX y = 313)
+    # Z negative downward (homed is at MAX z = 175)
+    # tuple in (X, Y, Z) order 
+    SOLID_TOOL_OFFSETS = {
+        ToolType.LIQUID: (0, 0, 0),
+        ToolType.POWDER: (0, 50, 20),
+        ToolType.SOLID: (0, 0, 50),
+    }
 
     def __init__(self, configs):
         self.CONFIGS = configs
@@ -151,12 +164,32 @@ class GcodeProcessor:
         return new_str + end_string
 
 
+    # generate a single solid tool dispense control block 
+    # beware that the tool starts at 20 above (z offset) target position 
+    # and that the puck is where the final block will be 
     def generate_solid_tool_control_gcode(self, config):
-        raise NotImplementedError()
-        # config = typing.cast(SolidPartConfig, config)
-        # initial_u_offset = config.initial_u_offset
-        # block_height = config.block_height
-        # gcode = 
+        config = typing.cast(SolidPartConfig, config)
+        initial_u_offset = config.initial_u_offset
+        block_height = config.block_height
+        inital_z_offset = self.SOLID_TOOL_OFFSETS[ToolType.SOLID][2]
+        total_z_move_distance = inital_z_offset - block_height
+        # slow down when approaching cut position 
+        fast_z_move_distance = total_z_move_distance * 3 / 4
+        approach_z_move_distance = total_z_move_distance * 4
+
+        file_name = "solid.gcode"
+        file = os.path.join(self.DISCRETE_TOOL_GCODE_DIR, file_name)
+        gcode = open(file, "r").read()
+
+        gcode.replace("{initial_u_offset}", f"{initial_u_offset:.3f}")
+        gcode.replace("{block_height}", f"{block_height:.3f}")
+        gcode.replace("{total_z_move_distance}", f"{total_z_move_distance:.3f}")
+        gcode.replace("{fast_z_move_distance}", f"{fast_z_move_distance:.3f}")
+        gcode.replace("{approach_z_move_distance}", f"{approach_z_move_distance:.3f}")
+
+        # initial u offset need to be increased after each cut 
+        config.initial_u_offset += block_height
+
 
     # get gcode block to control discrete tools to be spliced in
     def get_discrete_tool_gcode(self, config):
@@ -172,6 +205,7 @@ class GcodeProcessor:
             file = os.path.join(self.DISCRETE_TOOL_GCODE_DIR, file_name)
             return open(file, "r").read()
         elif tool_type == ToolType.SOLID:
+            # solid tool control gcode are parameterized 
             return self.generate_solid_tool_control_gcode(config)
         else:
             raise NotImplementedError("unexpected else block reached for tool type match case")

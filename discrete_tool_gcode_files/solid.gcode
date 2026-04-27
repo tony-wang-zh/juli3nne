@@ -5,33 +5,28 @@ M950 P0 C"vfd"
 M280 P0 S0
 
 M208 U110 S0 ; temperary increase limit 
+G91 ; set all axis to relative positioning  
 
-;; move to 1st solid block point 
-G1 X240 Y313
+; extrude and z move 
+G1 U{initial_u_offset} ; extrude to initial offset
+G1 U{block_height} F600 ; extrude solid block 
 
-G1 U78.6 ;extrude to initial + height 
-G1 Z10;
-G1 Z7.3 F200; move to extrude point slowly 7.3 = current print plane + 7.3
-G1 F1800.000
+G1 Z-{fast_z_move_distance} F1800; move to extrude point, first fast and approach slow
+G1 Z-{approach_z_move_distance} F200; move to extrude point slowly 7.3 = current print plane + 7.3
 
+; cut
+G4 P500 ; hold
 M280 P0 S60 ; cut
 G4 P1000 ;wait for cut to finish
-G1 Z30  ;move up
+
+G1 Z{approach_z_move_distance} F200; move back up
+G1 Z{fast_z_move_distance} F1800; move back up
 
 M280 P0 S0 ; uncut 
-G4 P1000 
+G4 P1000 ; wait for uncut to finish
 
-
-
-; second part 
-G1 X214.1
-G1 U94.5
-G1 Z7.3 F200; move to extrude point slowly
-G1 F1800.000
-
-M280 P0 S60 ; cut
-G4 P1000 ;wait for cut to finish
-G1 Z30  ;move up 
-
-M280 P0 S0 ; uncut 
-G4 P1000 
+; reset 
+G90
+M208 U95 S0 ; reset extrusion liimt 
+; G28 U ; re-zero U axis
+; G1 F1800.000 ; reset speed
