@@ -23,12 +23,15 @@ class GcodeProcessor:
     # Y negative to outward (away from wall) (homed is at MAX y = 313)
     # Z negative downward (homed is at MAX z = 175)
     # tuple in (X, Y, Z) order 
-    SOLID_TOOL_OFFSETS = {
+    DISCRETE_TOOL_OFFSETS = {
         ToolType.LIQUID: (0, 0, 0),
         ToolType.POWDER: (0, 50, 20),
-        ToolType.SOLID: (0, 0, 50),
+        ToolType.SOLID: (0, 0, 50), # this is so that the solid tool does not move on the previously printed layer
     }
-    SOLID_TOOL_U_LIMIT = 110 # solid tool has higher u limit than paste
+    # this is how much higher the cutting surface of solid tool is from syringe tip
+    # this is written into the DISCRETE_TOOL_OFFSETS for other tools because they already dispense from above the surface
+    SOLID_TOOL_TIP_Z_OFFSET = 19 
+    SOLID_TOOL_U_LIMIT = 115 # solid tool also has higher u limit than paste
 
     def __init__(self, configs):
         self.CONFIGS = configs
@@ -172,8 +175,11 @@ class GcodeProcessor:
         config = typing.cast(SolidPartConfig, config)
         initial_u_offset = config.initial_u_offset
         block_height = config.block_height
-        inital_z_offset = self.SOLID_TOOL_OFFSETS[ToolType.SOLID][2]
-        total_z_move_distance = inital_z_offset - block_height
+        inital_z_offset = self.DISCRETE_TOOL_OFFSETS[ToolType.SOLID][2]
+        # because the solid tool is "shorter" aka the cutting surface is higher than where the synringe tips is 
+        # need to move a bit extra to reach the target block surface 
+        total_z_move_distance = inital_z_offset - block_height + self.SOLID_TOOL_TIP_Z_OFFSET 
+
         # slow down when approaching cut position 
         approach_z_move_distance = 10
         fast_z_move_distance = total_z_move_distance  - approach_z_move_distance
@@ -263,7 +269,7 @@ class GcodeProcessor:
                 if abs(x) == float('inf') or abs(y) == float('inf'):
                     raise ValueError('unexpected error found, inf min x or min y for discrete tool')
 
-                x_offset, y_offset, z_offset = self.SOLID_TOOL_OFFSETS[config.tool_type]
+                x_offset, y_offset, z_offset = self.DISCRETE_TOOL_OFFSETS[config.tool_type]
                 x += x_offset
                 y += y_offset
                 z += z_offset

@@ -5,7 +5,7 @@
 M950 P0 C"vfd"
 M280 P0 S0
 
-M208 U110 S0 ; temperary increase limit 
+M208 U115 S0 ; temperary increase limit 
 G1 U{initial_u_offset} ; move u to initial offset
 G91 ; set all axis to relative positioning  
 
