@@ -60,7 +60,7 @@ for i in range(len(PICKUP)):
     f.write("G01 Y"+str(PICKUP[i][3])+" Z"+str(PICKUP[i][0])+" F"+str(SPEEDPICKUP[1])+"; picking tool "+str(i+1)+" \n")
     f.write("G01 Y"+str(PICKUP[i][3])+" Z"+str(PICKUP[i][4])+" F"+str(SPEEDPICKUP[2])+"; insert comment\n")
     f.write("G01 Y"+str(PICKUP[i][5])+" Z"+str(PICKUP[i][6])+" F"+str(SPEEDPICKUP[3])+"; insert comment\n")
-    f.write("G01 Y110 F1000; move away for more space\n")
+    f.write(f"G01 Y{float(PICKUP[i][5]) + 30} F1000; move away for more space\n")
     f.close()
 
 
@@ -80,6 +80,6 @@ for i in range(len(PICKUP)):
     f.write("G01 Y"+str(DROPOFF[i][7])+" Z"+str(DROPOFF[i][8])+" F"+str(SPEEDDROPOFF[3])+"; insert comment\n")
 
     # G01 Y1 F4000
-    f.write("G01 Y110 F1000; move away for more space\n")
+    f.write(f"G01 Y{float(DROPOFF[i][7]) + 30} F1000; move away for more space\n")
 
     f.close()
