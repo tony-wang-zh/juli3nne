@@ -2,6 +2,11 @@ import re
 from process_gcode import GcodeProcessor
 from configs import *
 
+# this part fixes the intial u offset of a tool
+# if a tool is used in more than 1 part, 
+# the initial u offset at the 2nd part = u offset at 1st part + total extrusion at 1st part
+# only for paste tool; solid tool logic for the equivalent is in process_gcode_prusa.py
+
 class GcodeDepthFixer:
 	def __init__(self, configs):
 		self.CONFIGS = configs
