@@ -18,6 +18,7 @@ csv_file = 'ToolPostCoords'
 # download_sheet(sheets, sheet_id, sheet_name)
 
 SPEEDPICKUP = SPEEDDROPOFF = [1500,500,500,500,1000,1000,1000]
+Z_MOVE_HEIGHT = 175 # move Z up for moving when not printing
 
 with open('toolchange/scripts/ToolPostCoords.csv', newline='') as csvfile:
     coordreader = csv.reader(csvfile, delimiter=',', quotechar='|')
@@ -61,6 +62,7 @@ for i in range(len(PICKUP)):
     f.write("G01 Y"+str(PICKUP[i][3])+" Z"+str(PICKUP[i][4])+" F"+str(SPEEDPICKUP[2])+"; insert comment\n")
     f.write("G01 Y"+str(PICKUP[i][5])+" Z"+str(PICKUP[i][6])+" F"+str(SPEEDPICKUP[3])+"; insert comment\n")
     f.write(f"G01 Y{float(PICKUP[i][5]) + 30} F1000; move away for more space\n")
+    f.write(f"G01 Z{Z_MOVE_HEIGHT}; lift Z up to clear existing print\n")
     f.close()
 
 
@@ -69,6 +71,7 @@ for i in range(len(PICKUP)):
     # Retract U axis
     
     f.write("G28 U0 F1000;\n")
+    f.write(f"G01 Z{Z_MOVE_HEIGHT}; lift Z up to clear existing print\n")
     f.write("G01 Z"+str(DROPOFF[i][0])+";\n")
     # G01 X1 Y1 Z1 F4000
     f.write("G01 X"+str(DROPOFF[i][1])+" Y"+str(DROPOFF[i][2])+" F"+str(SPEEDDROPOFF[0])+"; get in front of proper tool post\n")
