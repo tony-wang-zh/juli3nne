@@ -50,9 +50,8 @@ TEMP_INI_FILE_NAME = "temp_config.ini"
 
 class GcodeGenerator:
     BED_CENTER_X = 185
-    BED_CENTER_Y = 208
-
-    
+    # BED_CENTER_Y = 208 # default for right machne, which is currently not in use
+    BED_CENTER_Y = 290 # for left machine 
 
     def __init__(self, configs, base_offset):
         self.CONFIGS = configs

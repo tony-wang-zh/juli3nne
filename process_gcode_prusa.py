@@ -39,7 +39,8 @@ class GcodeProcessor:
         self.OUTPUT_DIR = "./output"
         self.TOOL_DIR = "./toolchange/generatedTCgcode"
         self.DISCRETE_TOOL_GCODE_DIR = "./discrete_tool_gcode_files"
-        self.END_STRING = "G01 Z60.4 F5000\nG01 X0.0 Y200.00 Z80.00 F2000.00" # return to default?
+        # self.END_STRING = "G01 Z60.4 F5000\nG01 X0.0 Y200.00 Z80.00 F2000.00" # return to default?
+        self.END_STRING = "G01 Z160 F1800\nG01 X0.0 Y300.00 Z175.00 F2000.00" # return to default?
         self.FIRST_LAYER_HEIGHT = 0.35
 
         # re-implemented adaptive tool pick up/drop
@@ -318,7 +319,8 @@ class GcodeProcessor:
         if is_last_file:
             gcode += self.END_STRING
         else:
-            gcode += 'G1 Z75 F1000;\n'+'G28 E0 F1000;;\n'
+            # gcode += 'G1 Z75 F1000;\n'+'G28 E0 F1000;;\n'; # this G1 Z75 line is for right machine, which is not in use rn
+            gcode += 'G28 E0 F1000;;\n'
         gcode += f'\n;;;;;;;;;;;\n; ENDING PART {config.stl_file_name} \n;;;;;;;;;;;\n'
 
         return gcode

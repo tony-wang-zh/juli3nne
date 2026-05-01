@@ -18,7 +18,7 @@ def download_config():
         # Save the content directly to a CSV file
         with open(LOCAL_CSV_FILE, 'wb') as file:
             file.write(response.content)
-        print("Success! f{LOCAL_CSV_FILE} updated.")
+        print(f"Success! {LOCAL_CSV_FILE} updated.")
     else:
         print(f"Failed to download the sheet. HTTP Status: {response.status_code}")
 
