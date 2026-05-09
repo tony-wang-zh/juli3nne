@@ -165,8 +165,7 @@ class GcodeGenerator:
 
         # invoke prusa slicer 
         # prusa-slicer --load test_config.ini --center 185,208 --export-gcode --output test.gcode 1.STL
-        # TODO: this need to be configed by user 
-        prusa_path = "/Applications/Prusa/PrusaSlicer.app/Contents/MacOS/PrusaSlicer"
+        prusa_path = "prusa-slicer"
         input_path = str(Path(self.INPUT_DIR , meta[STL_PATH]))
         cmd = [
             prusa_path,
