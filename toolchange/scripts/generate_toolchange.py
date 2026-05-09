@@ -57,7 +57,8 @@ for i in range(len(PICKUP)):
     
     # Retract U axis
     f.write("G28 U0 F1000;\n")
-    f.write("G01 X"+str(PICKUP[i][1])+ " Y"+str(PICKUP[i][2])+ " Z"+str(PICKUP[i][0])+" F"+str(SPEEDPICKUP[0])+"; insert comment\n")
+    f.write("G01 X"+str(PICKUP[i][1])+ " Y"+str(PICKUP[i][2]) + " F"+str(SPEEDPICKUP[0])+"; insert comment\n")
+    f.write("G01 Z"+str(PICKUP[i][0])+" F"+str(SPEEDPICKUP[0])+"; insert comment\n")
     f.write("G01 Y"+str(PICKUP[i][3])+" Z"+str(PICKUP[i][0])+" F"+str(SPEEDPICKUP[1])+"; picking tool "+str(i+1)+" \n")
     f.write("G01 Y"+str(PICKUP[i][3])+" Z"+str(PICKUP[i][4])+" F"+str(SPEEDPICKUP[2])+"; insert comment\n")
     f.write("G01 Y"+str(PICKUP[i][5])+" Z"+str(PICKUP[i][6])+" F"+str(SPEEDPICKUP[3])+"; insert comment\n")
@@ -72,9 +73,9 @@ for i in range(len(PICKUP)):
     
     f.write("G28 U0 F1000;\n")
     f.write(f"G01 Z{Z_MOVE_HEIGHT}; lift Z up to clear existing print\n")
+    f.write("G01 X"+str(DROPOFF[i][1])+" Y"+str(DROPOFF[i][2])+" F"+str(SPEEDDROPOFF[0])+"; get in front of proper tool post\n")
     f.write("G01 Z"+str(DROPOFF[i][0])+";\n")
     # G01 X1 Y1 Z1 F4000
-    f.write("G01 X"+str(DROPOFF[i][1])+" Y"+str(DROPOFF[i][2])+" F"+str(SPEEDDROPOFF[0])+"; get in front of proper tool post\n")
     # G01 Y2 F500
     f.write("G01 Y"+str(DROPOFF[i][3])+" Z"+str(DROPOFF[i][4])+" F"+str(SPEEDDROPOFF[1])+"; dropping tool "+str(i+1)+" \n")
     # G01 Y3 Z2 F500
