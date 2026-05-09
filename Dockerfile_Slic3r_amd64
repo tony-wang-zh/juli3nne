@@ -1,3 +1,9 @@
+##### PLEASE READ ##### 
+# this docker file will compile a docker image for AMD target (intel devices)
+# on which the old core, Slic3r can be run 
+# this was the way Juli3nne worked until Spring 2026
+# it is no longer used but kept for developement prupose
+
 # ---- Base system ----
 FROM ubuntu:18.04
 ENV DEBIAN_FRONTEND=noninteractive
