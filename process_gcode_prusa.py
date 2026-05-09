@@ -105,6 +105,8 @@ class GcodeProcessor:
         LAYER_START_E_VALUE = 2 
         current_layer_last_e_value = LAYER_START_E_VALUE
 
+        new_str += "G28 U" # home U, mostly useful when testing to avoid overextrusion
+
         for line in f:           
             if len(line) == 0:
                 continue
@@ -314,6 +316,9 @@ class GcodeProcessor:
 
         # tool drop and ending 
         if self.should_drop_off_tool[config.stl_file_name]:
+            if config.tool_type == ToolType.SOLID:
+                gcode += "M280 P0 S25\n" # must center blade before returning solid tool
+
             gcode += self.get_tool_gcode(config.tool_index, False)
 
         if is_last_file:
