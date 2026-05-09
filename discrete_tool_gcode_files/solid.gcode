@@ -15,6 +15,7 @@ G1 Z-{approach_z_move_distance} F200;
 
 ; cut
 G4 P500 ; hold
+M280 P0 S0 ; cut
 M280 P0 S60 ; cut
 G4 P1000 ;wait for cut to finish
 
