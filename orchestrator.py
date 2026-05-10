@@ -58,7 +58,6 @@ class Orchestrator:
                 match tokens[1].strip(): 
                     case 'liquid': 
                         tool_index = int(tokens[2])
-                        dispense_z_offset = float(tokens[3])
                         configs.append(
                             LiquidPartConfig(
                                 file_name,
@@ -69,7 +68,6 @@ class Orchestrator:
                         # liquid and powder only has 1 arg, 
                         # off set of print head when spraying 
                         tool_index = int(tokens[2])
-                        dispense_z_offset = float(tokens[3])
                         configs.append(
                             PowderPartConfig(
                                 file_name,
