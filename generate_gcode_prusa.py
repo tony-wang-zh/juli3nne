@@ -1,21 +1,23 @@
 from __future__ import annotations
 
+import os
 from os import listdir
 from os.path import isfile, join
 from stl import mesh
 import stl
 import subprocess
-import math
 import shutil
+import sys
 
 import numpy as np
 
 from pathlib import Path
-from typing import Union
 from configs import *
 
 
 DEFAULT_EXTRUSION_MULTIPLIER = 0.02 # for non paste tool, doesn't affect slicing 
+PRUSA_DEFAULT_PATH_MAC = "/Applications/Prusa/PrusaSlicer.app/Contents/MacOS/PrusaSlicer"
+
 
 @staticmethod
 def find_min_max(obj):
@@ -148,6 +150,24 @@ class GcodeGenerator:
         return updated
 
 
+    # @staticmethod
+    # def get_prusa_slicer_path():
+    #     #check if 'prusa-slicer' is globally available in the system PATH
+    #     system_path = shutil.which("prusa-slicer")
+    #     if system_path:
+    #         return system_path
+
+    #     # 2. If not, check the standard macOS install location directly
+    #     if sys.platform == "darwin" and os.path.exists(PRUSA_DEFAULT_PATH_MAC):
+    #         return PRUSA_DEFAULT_PATH_MAC
+
+    #     # 3. Check standard Windows location
+    #     win_default = r"C:\Program Files\Prusa3D\PrusaSlicer\prusa-slicer-console.exe"
+    #     if sys.platform == "win32" and os.path.exists(win_default):
+    #         return win_default
+
+    #     raise FileNotFoundError("Could not find PrusaSlicer. Please install it or add it to your PATH.")
+
     # create a temporary ini file
     # update ini file with z-offset and extrusion offset
     def invoke_slicer(self, meta):
@@ -165,8 +185,7 @@ class GcodeGenerator:
 
         # invoke prusa slicer 
         # prusa-slicer --load test_config.ini --center 185,208 --export-gcode --output test.gcode 1.STL
-        # TODO: this need to be configed by user 
-        prusa_path = "/Applications/Prusa/PrusaSlicer.app/Contents/MacOS/PrusaSlicer"
+        prusa_path = "prusa-slicer"
         input_path = str(Path(self.INPUT_DIR , meta[STL_PATH]))
         cmd = [
             prusa_path,
