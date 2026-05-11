@@ -15,7 +15,8 @@ class GcodeProcessor:
     * Tool indices start from 0
     """
     U_AXIS_LIMIT = 95
-    # the offset needed to add to move commands 
+
+    # offsets needed to add to move commands for different too
     # to cancel the offset of discrete tool center from syringe center 
     # the positive / negative direciton follows direction of machine 
     # which are: 
