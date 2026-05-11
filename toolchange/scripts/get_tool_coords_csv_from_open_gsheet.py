@@ -4,7 +4,7 @@ import requests
 
 SPREADSHEET_ID = '1zRDNl76fYzoBgPhy8uw7BePsERJiiz6k2lMWA27DdNM'
 GID = '0'  # the tab, 0 for default first tabb
-LOCAL_CSV_FILE = "ToolPostCoords.csv"
+LOCAL_CSV_FILE = "./toolchange/scripts/ToolPostCoords.csv"
 
 # The direct CSV export URL
 url = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/export?format=csv&gid={GID}"
